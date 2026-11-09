@@ -1,10 +1,9 @@
-import type { Principal, Role } from "@pacd/contracts";
-import { IconButton, StatusBadge } from "@pacd/ui";
+import type { Principal } from "@pacd/contracts";
+import { Button, IconButton } from "@pacd/ui";
 import {
   Activity,
   BarChart3,
   BriefcaseBusiness,
-  ChevronDown,
   ClipboardList,
   FolderKanban,
   Gauge,
@@ -39,13 +38,13 @@ export function AppShell({
   activePage,
   children,
   onNavigate,
-  onRoleChange,
+  onSignOut,
   principal,
 }: {
   activePage: string;
   children: ReactNode;
   onNavigate: (page: string) => void;
-  onRoleChange: (role: Role) => void;
+  onSignOut: () => void;
   principal: Principal;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -80,9 +79,9 @@ export function AppShell({
         <div className="rounded-lg bg-white/7 p-3">
           <div className="type-caption flex items-center gap-2 font-medium text-white">
             <span className="size-2 rounded-full bg-emerald-400" />
-            Live updates connected
+            Local API connected
           </div>
-          <p className="type-caption mt-1.5 text-blue-100/60">Demo state. No timed fetching.</p>
+          <p className="type-caption mt-1.5 text-blue-100/60">Database-backed local session</p>
         </div>
       </div>
     </>
@@ -109,30 +108,14 @@ export function AppShell({
             <IconButton className="lg:hidden" label="Open navigation" onClick={() => setMobileOpen(true)}>
               <Menu aria-hidden="true" size={19} />
             </IconButton>
-            <div className="hidden items-center gap-2 sm:flex">
-              <StatusBadge label="Demo data" tone="info" />
-              <span className="type-caption text-[var(--muted)]">Frontend preview</span>
-            </div>
+            <p className="type-section-title hidden text-[var(--navy-900)] sm:block">PACD WorkPilot</p>
           </div>
 
           <div className="flex items-center gap-3">
-            <label className="type-label hidden text-[var(--muted)] md:block" htmlFor="demo-role">Preview role</label>
-            <div className="relative">
-              <select
-                className="interactive-control type-body min-h-10 appearance-none rounded-lg border border-[var(--border)] bg-white py-2 pl-3 pr-9 text-[var(--navy-900)] focus:outline-none focus:ring-2 focus:ring-[var(--navy-500)]"
-                id="demo-role"
-                onChange={(event) => onRoleChange(event.target.value as Role)}
-                value={principal.role}
-              >
-                <option value="USER">User</option>
-                <option value="ADMIN">Admin</option>
-                <option value="SUPER_ADMIN">Super Admin</option>
-              </select>
-              <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted)]" size={16} />
-            </div>
             <div className="type-label hidden size-9 place-items-center rounded-full bg-[var(--navy-100)] font-medium text-[var(--navy-900)] sm:grid">
               {principal.displayName.split(" ").map((part) => part[0]).join("").slice(0, 2)}
             </div>
+            <Button onClick={onSignOut} variant="ghost">Sign out</Button>
           </div>
         </header>
         <main className="px-3 py-5 sm:px-4 lg:px-5 lg:py-6">{children}</main>

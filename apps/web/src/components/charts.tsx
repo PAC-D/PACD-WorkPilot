@@ -13,17 +13,7 @@ import {
   YAxis,
 } from "recharts";
 
-import { projectMix, projectTimeline, workTrend, workTrend30 } from "../data/demo-data";
-
-export function WorkTrendChart({ period, project }: { period: "7" | "30"; project: string }) {
-  const factor = project === "all" ? 1 : project === "Community Learning Hubs" ? 0.58 : 0.42;
-  const data = (period === "7" ? workTrend : workTrend30).map((item) => ({
-    ...item,
-    completed: Math.round(item.completed * factor),
-    updates: Math.round(item.updates * factor),
-  }));
-  const description = `${period === "7" ? "Last 7 days" : "Last 30 days"}, ${project === "all" ? "all authorized projects" : project}`;
-
+export function WorkTrendChart({ data, description }: { data: ReadonlyArray<{completed:number;day:string;updates:number}>; description:string }) {
   return (
     <Card className="min-w-0">
       <CardHeader description={description} title="Work updates" />
@@ -59,12 +49,9 @@ export function WorkTrendChart({ period, project }: { period: "7" | "30"; projec
   );
 }
 
-export function ProjectMixChart({ project }: { project: string }) {
-  const selectedProject = projectTimeline.find((item) => item.project === project);
-  const data = selectedProject
-    ? projectMix.filter((item) => item.name.toUpperCase().replace(" ", "_") === selectedProject.status).map((item) => ({ ...item, count: 1 }))
-    : projectMix;
+export function ProjectMixChart({ data }: { data: ReadonlyArray<{count:number;name:string}> }) {
   const total = data.reduce((sum, item) => sum + item.count, 0);
+  const colors=["#1B4877","#4071A4","#94A3B8","#207653","#64748B"];
 
   return (
     <Card className="min-w-0">
@@ -82,8 +69,8 @@ export function ProjectMixChart({ project }: { project: string }) {
               stroke="#FFFFFF"
               strokeWidth={3}
             >
-              {data.map((entry) => (
-                <Cell fill={entry.fill} key={entry.name} />
+              {data.map((entry, index) => (
+                <Cell fill={colors[index % colors.length]} key={entry.name} />
               ))}
             </Pie>
             <Tooltip />

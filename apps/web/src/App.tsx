@@ -1,70 +1,47 @@
-import type { Role, SignInInput } from "@pacd/contracts";
+import type { Permission, Principal } from "@pacd/contracts";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { AppShell } from "./components/app-shell";
-import { demoPrincipals } from "./data/demo-data";
-import { authClient } from "./features/auth/auth-client";
 import { LoginPage } from "./features/auth/login-page";
-import { getNavigation } from "./lib/navigation";
-import { AdminDashboard, ModulePreview, SuperAdminDashboard, UserDashboard } from "./pages/dashboards";
+import { ApiError, apiClient } from "./lib/api-client";
+import { DatabaseDashboard } from "./pages/database-dashboard";
+import { ActivitiesPage, AuditPage, ClaimsPage, ConfigurationPage, ProfilePage, ProjectsPage, RequestsPage, UsersPage } from "./pages/resource-pages";
 
-async function loadDemoPrincipal(role: Role) {
-  return Promise.resolve(demoPrincipals[role]);
-}
+function allowed(principal:Principal,permission:Permission){return principal.permissions.includes(permission);}
 
 export function App() {
-  const [previewAuthenticated, setPreviewAuthenticated] = useState(false);
-  const [role, setRole] = useState<Role>("USER");
-  const [activePage, setActivePage] = useState("overview");
-  const queryClient = useQueryClient();
-  const principalQuery = useQuery({
-    queryFn: () => loadDemoPrincipal(role),
-    queryKey: ["demo", "principal", role],
-    refetchInterval: false,
-    staleTime: Number.POSITIVE_INFINITY,
-  });
-  const principal = principalQuery.data ?? demoPrincipals[role];
-  const activeLabel = useMemo(
-    () => getNavigation(principal).find((item) => item.id === activePage)?.label ?? "Overview",
-    [activePage, principal],
-  );
+  const [activePage,setActivePage]=useState("overview");
+  const [loginError,setLoginError]=useState<string|null>(null);
+  const queryClient=useQueryClient();
+  const principalQuery=useQuery({queryKey:["principal"],queryFn:apiClient.me,retry:false,refetchInterval:false});
+  const signedOut=principalQuery.error instanceof ApiError&&principalQuery.error.status===401;
+  const identities=useQuery({queryKey:["local-identities"],queryFn:apiClient.listIdentities,enabled:signedOut,retry:false});
 
-  function handleRoleChange(nextRole: Role) {
-    queryClient.clear();
-    setRole(nextRole);
-    setActivePage("overview");
-  }
+  async function signIn(id:string){setLoginError(null);try{await apiClient.signInLocal(id);await queryClient.invalidateQueries({queryKey:["principal"]});}catch(error){setLoginError(error instanceof Error?error.message:"Unable to sign in");}}
+  function signOut(){apiClient.clearIdentity();queryClient.clear();setActivePage("overview");void queryClient.invalidateQueries({queryKey:["principal"]});}
 
-  function dashboard() {
-    const onRefresh = () => void principalQuery.refetch();
-    if (principal.role === "USER") return <UserDashboard onNavigate={setActivePage} onRefresh={onRefresh} principal={principal} />;
-    if (principal.role === "ADMIN") return <AdminDashboard onRefresh={onRefresh} principal={principal} />;
-    return <SuperAdminDashboard onRefresh={onRefresh} principal={principal} />;
-  }
-
-  async function handleSignIn(input: SignInInput) {
-    await authClient.signIn(input);
-  }
-
-  if (!previewAuthenticated) {
-    return (
-      <LoginPage
-        onPreview={import.meta.env.DEV ? () => setPreviewAuthenticated(true) : undefined}
-        onSignIn={handleSignIn}
-      />
-    );
-  }
-
-  return (
-    <AppShell
-      activePage={activePage}
-      onNavigate={setActivePage}
-      onRoleChange={handleRoleChange}
-      principal={principal}
-    >
-      {activePage === "overview" ? dashboard() : <ModulePreview label={activeLabel} onBack={() => setActivePage("overview")} />}
-    </AppShell>
-  );
+  if(principalQuery.isPending)return <div className="grid min-h-screen place-items-center type-body text-[var(--muted)]">Connecting to PACD WorkPilot...</div>;
+  const connectionError=!signedOut&&principalQuery.error instanceof Error?principalQuery.error.message:null;
+  if(!principalQuery.data)return <LoginPage error={loginError??connectionError??(identities.error instanceof Error?identities.error.message:null)} identities={identities.data??[]} isLoading={signedOut&&identities.isPending} onRetry={()=>{setLoginError(null);void principalQuery.refetch();}} onSignIn={id=>void signIn(id)}/>;
+  const principal=principalQuery.data;
+  return <AppShell activePage={activePage} onNavigate={setActivePage} onSignOut={signOut} principal={principal}>
+    <Route activePage={activePage} principal={principal}/>
+  </AppShell>;
 }
 
+function Route({activePage,principal}:{activePage:string;principal:Principal}){
+  switch(activePage){
+    case "overview": case "reports": return <DatabaseDashboard principal={principal}/>;
+    case "people": return <UsersPage canCreate={false}/>;
+    case "users-access": return <UsersPage canCreate={allowed(principal,"users.manage")}/>;
+    case "projects": return <ProjectsPage canCreate={allowed(principal,"projects.manage")}/>;
+    case "my-work": case "work": return <ActivitiesPage canCreate={allowed(principal,"work.create.own")}/>;
+    case "claims": return <ClaimsPage canCreate={allowed(principal,"claims.create.own")} canReview={allowed(principal,"claims.approve.scope")} principal={principal}/>;
+    case "requests": return <RequestsPage canCreate={allowed(principal,"requests.create.own")} canReview={allowed(principal,"requests.review.scope")} principal={principal}/>;
+    case "configuration": return <ConfigurationPage/>;
+    case "audit": return <AuditPage/>;
+    case "profile": return <ProfilePage principal={principal}/>;
+    default:return <DatabaseDashboard principal={principal}/>;
+  }
+}
