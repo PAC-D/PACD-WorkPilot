@@ -1,6 +1,6 @@
 # PACD WorkPilot | Internal Work and Employee Operations
 
-> **Status:** Approved baseline specification, implementation not yet started.  
+> **Status:** Frontend foundation in progress with typed demo data; backend not implemented.
 > **Version:** 1.0.0 | **Updated:** 2026-11-09 | **Audience:** product owners, developers, coding agents and operations.
 
 A small internal application for **at most 30 active employee accounts**. It supports work updates, project allocations, monthly expense claims, internal requests, and management reporting. Three user-facing roles: **USER, ADMIN, SUPER_ADMIN**. Role labels do not grant blanket privileges: effective access comes from explicit policy and scope.
@@ -48,16 +48,18 @@ A small internal application for **at most 30 active employee accounts**. It sup
 - Pagination is server-side with capped `limit` (default 20, max 100), stable sort and **opaque DynamoDB cursors**, not fabricated SQL offset.
 - Audit all security-sensitive changes. Every write is authenticated, authorized, validated, idempotent when retried, and emits a post-commit invalidation event.
 
-## Local development (planned, not yet bootstrapped)
-Install Node.js LTS (pin exact version in `.node-version` when implementation starts), pnpm via Corepack, and AWS CLI/CDK. Run the forthcoming `pnpm install`, `pnpm dev`, `pnpm test` only after workspace scaffolding exists. **This repository currently provides specifications and templates, not a functioning app.** Do not claim otherwise.
+## Local development
+Install the Node.js version pinned in `.node-version` and pnpm version declared in `package.json`. Run `pnpm install`, then `pnpm dev` for the local Vite frontend. Use `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build` before submitting changes.
+
+The current frontend uses fictional, typed fixtures and a development-only role selector for USER, ADMIN, and SUPER_ADMIN previews. It is not connected to Cognito, the HTTP API, DynamoDB, S3, or AppSync Events. See [frontend to backend handoff](docs/FRONTEND_BACKEND_HANDOFF.md) before replacing fixtures.
 
 ## Repository design
 ```text
-apps/web/                  React SPA
-apps/api/                  Hono Lambda entry and domain services
+apps/web/                  React SPA and typed demo dashboards
+apps/api/                  Hono Lambda entry and domain services (planned)
 packages/contracts/        Zod schemas and typed API/event contracts
 packages/ui/               Shared UI/design tokens/components
-infra/                     CDK stacks, IAM, budgets
+infra/                     CDK stacks, IAM, budgets (planned)
 contracts/                 Versioned JSON schemas/examples
 .docs or docs/             ADRs, PRD, security, data, deployment, tests
 ```
