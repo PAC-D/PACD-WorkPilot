@@ -11,7 +11,7 @@
 1. 30 accounts, 3 roles and multiple scopes: only authorized rows and aggregate charts appear.
 2. Admin can be granted `claims.read.scope` without `claims.approve.scope`; GET works, POST approval 403.
 3. Admin with approve permission cannot approve own claim. Even Super Admin cannot approve own claim in v1.
-4. User invited with temporary password must set new password; WorkOps never logs or returns password after invite flow.
+4. User invited with temporary password must set new password; PACD WorkPilot never logs or returns password after invite flow.
 5. Claim submitted in Nov for October appears under October; travel permits multiple, mobile duplicate blocked via transactional marker.
 6. Two simultaneous approval requests produce only one successful status transition and one audit decision.
 7. Project assignments track assignedAt, startDate, plannedEndDate, actualEndDate independently.

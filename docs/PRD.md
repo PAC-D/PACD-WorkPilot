@@ -1,6 +1,6 @@
 # Product Requirements Document (PRD)
 
-**Product:** WorkOps | **Version:** 1.0 | **Population:** <=30 active accounts | **Status:** v1 baseline
+**Product:** PACD WorkPilot | **Version:** 1.0 | **Population:** <=30 active accounts | **Status:** v1 baseline
 
 ## Outcome
 An employee can submit a work update, expense receipt or request in under 60 seconds after opening its form (excluding file transfer). An authorized administrator sees changes promptly **without recurring fetch timers**. The interface must be understandable to non-technical employees on desktop and phone.
@@ -12,7 +12,7 @@ An employee can submit a work update, expense receipt or request in under 60 sec
 
 ## Module requirements
 ### Identity and user provisioning
-Super Admin adds employee code (unique), display name, username, optional email/phone, department, role(s), scopes, then creates Cognito account with generated temporary password. Force password change on first login. Account actions: disable/enable, reset temporary password, revoke sessions, role assignment, permission grants/revocations. Public registration disabled. Passwords never stored in WorkOps DB. MFA required for admins if supported by selected Cognito tier/configuration; document any tier adjustment via ADR.
+Super Admin adds employee code (unique), display name, username, optional email/phone, department, role(s), scopes, then creates Cognito account with generated temporary password. Force password change on first login. Account actions: disable/enable, reset temporary password, revoke sessions, role assignment, permission grants/revocations. Public registration disabled. Passwords never stored in PACD WorkPilot DB. MFA required for admins if supported by selected Cognito tier/configuration; document any tier adjustment via ADR.
 
 ### Projects
 Project code, name, owner, description, start date, planned end date, actual end date, status (PLANNED/ACTIVE/ON_HOLD/COMPLETED/ARCHIVED), member assignments, assignment date, assigned_by, optional due date per member. Each project may be visible to approved members/admin scopes. User may request to join; no automatic access to unassigned project. Track assignment and removal history.

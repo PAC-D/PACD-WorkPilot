@@ -1,4 +1,4 @@
-# WorkOps | Internal Work and Employee Operations
+# PACD WorkPilot | Internal Work and Employee Operations
 
 > **Status:** Approved baseline specification, implementation not yet started.  
 > **Version:** 1.0.0 | **Updated:** 2026-11-09 | **Audience:** product owners, developers, coding agents and operations.
