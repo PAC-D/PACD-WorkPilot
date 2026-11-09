@@ -1,6 +1,6 @@
 # PACD WorkPilot | Internal Work and Employee Operations
 
-> **Status:** Frontend foundation in progress with typed demo data; backend not implemented.
+> **Status:** Frontend login and typed demo foundation in progress; backend contract and policy foundation started, AWS adapters not implemented.
 > **Version:** 1.0.0 | **Updated:** 2026-11-09 | **Audience:** product owners, developers, coding agents and operations.
 
 A small internal application for **at most 30 active employee accounts**. It supports work updates, project allocations, monthly expense claims, internal requests, and management reporting. Three user-facing roles: **USER, ADMIN, SUPER_ADMIN**. Role labels do not grant blanket privileges: effective access comes from explicit policy and scope.
@@ -51,7 +51,7 @@ A small internal application for **at most 30 active employee accounts**. It sup
 ## Local development
 Install the Node.js version pinned in `.node-version` and pnpm version declared in `package.json`. Run `pnpm install`, then `pnpm dev` for the local Vite frontend. Use `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build` before submitting changes.
 
-The current frontend uses fictional, typed fixtures and a development-only role selector for USER, ADMIN, and SUPER_ADMIN previews. It is not connected to Cognito, the HTTP API, DynamoDB, S3, or AppSync Events. See [frontend to backend handoff](docs/FRONTEND_BACKEND_HANDOFF.md) before replacing fixtures.
+The current frontend has a production-oriented login screen with an unconfigured authentication adapter. Development builds expose fictional typed dashboards through an explicit preview control and role selector for USER, ADMIN, and SUPER_ADMIN. It is not connected to Cognito, the HTTP API, DynamoDB, S3, or AppSync Events. See [frontend to backend handoff](docs/FRONTEND_BACKEND_HANDOFF.md) before replacing fixtures.
 
 Shared color, typography, and motion tokens live in `packages/ui/src/tokens.css`. Repository branding is sourced from `assets/logo_left.png` and `assets/favicon.png`; Vite serves that directory directly in development and copies the assets into production builds.
 

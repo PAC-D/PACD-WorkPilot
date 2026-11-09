@@ -7,12 +7,12 @@ An employee can submit a work update, expense receipt or request in under 60 sec
 
 ## Actors
 - USER: self-service; own work/claims/requests, assigned projects.
-- ADMIN: scoped visibility; optional granular approve/edit rights set by Super Admin.
+- ADMIN: organization-wide read visibility in v1; create, assign, configure, review, approve and edit rights remain granular grants set by Super Admin.
 - SUPER_ADMIN: administers accounts, permissions, departments, projects, request form templates, claim policy, and audit. Sensitive self-approvals still denied unless explicit super-admin policy plus audit requirements are met; v1 disallows them entirely to prevent conflict of interest.
 
 ## Module requirements
 ### Identity and user provisioning
-Super Admin adds employee code (unique), display name, username, optional email/phone, department, role(s), scopes, then creates Cognito account with generated temporary password. Force password change on first login. Account actions: disable/enable, reset temporary password, revoke sessions, role assignment, permission grants/revocations. Public registration disabled. Passwords never stored in PACD WorkPilot DB. MFA required for admins if supported by selected Cognito tier/configuration; document any tier adjustment via ADR.
+Super Admin adds employee code (unique), display name, username, optional email/phone, department, role(s), scopes, then creates Cognito account with generated temporary password. Force password change on first login. Account actions: disable/enable, reset temporary password, revoke sessions, role assignment, permission grants/revocations. Public registration disabled. Passwords never stored in PACD WorkPilot DB. MFA is deferred for v1 by product-owner decision; the login and identity adapter must remain compatible with enabling Cognito MFA later. See ADR-0003.
 
 ### Projects
 Project code, name, owner, description, start date, planned end date, actual end date, status (PLANNED/ACTIVE/ON_HOLD/COMPLETED/ARCHIVED), member assignments, assignment date, assigned_by, optional due date per member. Each project may be visible to approved members/admin scopes. User may request to join; no automatic access to unassigned project. Track assignment and removal history.
@@ -24,7 +24,7 @@ Project, title, category, notes, date, status (PLANNED/IN_PROGRESS/BLOCKED/COMPL
 Use term **Claims** (not quotations). Types: MOBILE_BILL, INTERNET_BILL, TRAVEL_ALLOWANCE and configuration-defined types. Each has `periodMonth YYYY-MM`, amount minor units + currency BDT, supporting attachments, memo, created/submitted dates; states DRAFT/SUBMITTED/UNDER_REVIEW/NEEDS_INFO/APPROVED/REJECTED/PAID. Only server-approved transitions. Claim policy can define per-category caps, deadlines and one-active-claim-per-period for mobile/internet; travel may have multiple claims. Reject/needs-info requires reason. Edits after submission require claim return to NEEDS_INFO, resubmit, or explicit scoped override with audit. Reimbursement does not imply payment; mark PAID only when granted.
 
 ### Requests
-Types: SOFTWARE_INSTALL, LEAVE, API_ACCESS, PURCHASE, IT_SUPPORT, GENERAL. Server allowlists per-type configurable fields; always have title, reason, status, requester, reviewer scope, timestamps. States DRAFT/SUBMITTED/IN_REVIEW/NEEDS_INFO/APPROVED/REJECTED/FULFILLED/CLOSED/CANCELLED. Approved is distinct from fulfilled. Single-step approval in v1; design extensible `approvalSteps` array for later multi-step review. Leave entitlement balance tracking out of scope for v1; leave request dates tracked.
+Types: SOFTWARE_INSTALL, LEAVE, API_ACCESS, PURCHASE, IT_SUPPORT, GENERAL. Server allowlists per-type configurable fields; always have title, reason, status, requester, reviewer scope, timestamps. States DRAFT/SUBMITTED/IN_REVIEW/NEEDS_INFO/APPROVED/REJECTED/FULFILLED/CLOSED/CANCELLED. Approved is distinct from fulfilled. Single-step approval in v1; Super Admin handles assignment and acceptance by default. An Admin may do so only after an explicit Super Admin grant. Design remains extensible through an `approvalSteps` array for later multi-step review. Leave entitlement balance tracking is out of scope for v1; leave request dates are tracked.
 
 ### Dashboard
 Employee: recent activities, active projects, current month claim state, request counts, action list.
@@ -49,7 +49,7 @@ Target <=30 accounts, responsive dashboard; initial app load under 3s on typical
 
 ## Acceptance examples
 1. USER creates claim for October on November 9; October report shows it.
-2. Admin with only `claims.read.team` cannot see a different department claim or subscribe to its event channel.
+2. A User cannot see another employee's claim or subscribe to that employee's event channel; Admin organization-wide read remains server-authorized and does not grant approval.
 3. Admin without `claims.approve.any` sees no approve action; direct API POST is 403.
 4. Attempt to self-approve is 403 even if assigned broad admin rights.
 5. USER updates activity; Admin connected to matching authorized channel receives invalidation and active chart/list refresh without timer.

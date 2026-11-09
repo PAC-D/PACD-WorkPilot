@@ -27,7 +27,7 @@
 ## Production launch checklist
 1. Select region and data retention; enable CloudTrail and AWS Budgets.
 2. Set deployment role with scoped IAM; separate staging/prod stacks, accounts if feasible.
-3. Disable Cognito public signup, enforce password policy and privileged MFA; bootstrap one Super Admin safely.
+3. Disable Cognito public signup, enforce the approved password and session policy, monitor sign-in failures, and bootstrap one Super Admin safely. MFA is deferred in ADR-0003 and should be reconsidered before production signoff.
 4. Enable encrypted buckets and private CloudFront origin; test restricted downloads/expired presigns.
 5. Enable DynamoDB PITR if approved; set alarms for throttling, Lambda errors, DLQ/failed stream delivery, websocket auth denial anomalies.
 6. Configure event publishing dedupe and failure destination; alarms and manual refresh fallback.

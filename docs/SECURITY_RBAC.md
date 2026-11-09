@@ -1,7 +1,7 @@
 # Security, identity and authorization specification
 
 ## Identity
-Amazon Cognito User Pool (Lite to start), invite-only, no self-signup. Username = immutable employee login such as `emp-001`; `employeeCode` separate unique business ID. Cognito subject (`sub`) is binding identity primary key; application keeps profile and grants. Super Admin creates account via backend `AdminCreateUser`, temporary random password handled by Cognito, first login requires `NEW_PASSWORD_REQUIRED`. Never generate or return reusable passwords in a list, never store them in DynamoDB, logs, frontend storage, seed files or emails sent by the app. For first bootstrap, privileged operator executes audited one-time provisioning with least-privileged AWS access. Require MFA for privileged users if supported by selected Cognito plan; if the chosen tier cannot meet requirement, upgrade tier in an ADR before production.
+Amazon Cognito User Pool (Lite to start), invite-only, no self-signup. Username = immutable employee login such as `emp-001`; `employeeCode` separate unique business ID. Cognito subject (`sub`) is binding identity primary key; application keeps profile and grants. Super Admin creates account via backend `AdminCreateUser`, temporary random password handled by Cognito, first login requires `NEW_PASSWORD_REQUIRED`. Never generate or return reusable passwords in a list, never store them in DynamoDB, logs, frontend storage, seed files or emails sent by the app. For first bootstrap, privileged operator executes audited one-time provisioning with least-privileged AWS access. MFA is not required in v1 by product-owner decision (ADR-0003). This increases password-compromise risk, so throttling, secure recovery, short-lived tokens, session revocation and login monitoring remain required. The identity boundary must allow MFA to be enabled without redesigning domain modules.
 
 ## Role and permission evaluation
 `effective = activeUser AND authenticated AND hasExplicitPermission AND inAuthorizedScope AND passesObjectPolicy AND transitionAllowed`.
@@ -12,8 +12,10 @@ Role templates provide defaults, but Super Admin grants and revokes per-user ove
 
 ## Role defaults
 - USER: personal work/projects/claims/requests.
-- ADMIN: `dashboard.read.scope`, `users.read.scope`, `work.read.scope`, `claims.read.scope`, `requests.read.scope` on explicitly assigned departments/projects. Review/edit/approve/export **not automatic**.
+- ADMIN: `dashboard.read.scope`, `users.read.scope`, `work.read.scope`, `claims.read.scope`, `requests.read.scope` with organization-wide read scope in v1. Create/assign/configure/review/edit/approve/export rights are **not automatic**.
 - SUPER_ADMIN: organization-wide management capabilities, except v1 prohibition on self-approval. Role changes only Super Admin, and bootstrap is out-of-band.
+
+Request assignment and acceptance are Super Admin capabilities by default. An Admin requires an explicit Super Admin-managed grant and still passes object, transition and audit policies.
 
 ## Self-modification and self-approval
 - An Admin may correct own DRAFT claim with `claims.edit.own`.

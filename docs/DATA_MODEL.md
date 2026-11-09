@@ -62,7 +62,7 @@ Multi-scope Admin reports either issue bounded queries per permitted scope (max 
 - Idempotency keyed by actor + route + client key, with request hash and TTL; conflicting reuse rejected.
 - `periodMonth` `YYYY-MM`, date-only `YYYY-MM-DD`, timestamps ISO UTC. BDT stored integer minor units, never binary floating point.
 - Records have `createdAt`, `updatedAt`, `createdBy`, `version`; no hard deletion of approved transactions. Use status/archivedAt.
-- Keep file content in S3; only `fileId`, object key, owner, security state, type and size in metadata. Authorized download presigns generated on demand.
+- Keep file content in S3; only `fileId`, object key, owner, security state, type and size in metadata. Authorized download presigns generated on demand. V1 accepts PDF, DOCX, JPG and PNG up to 5 MB (5,000,000 bytes) per file; extension, declared MIME, detected type and size must agree during finalization.
 - Claim duplicate rules must be enforced with dedicated transactionally written uniqueness marker, e.g. `UNIQUE_CLAIM#user#type#period`, and released only under defined cancellation/rejection policy; travel exempt.
 - Events stream may deliver duplicates/out of order: dedupe by event ID and compare versions; never apply event payload as entity state.
 

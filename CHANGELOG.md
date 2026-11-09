@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-09 - Login and backend policy foundation
+- Added an original responsive PACD WorkPilot login screen with accessible username/password controls, restrained motion, reduced-motion support, and a development-only dashboard preview.
+- Added an authentication adapter boundary without storing passwords or introducing a custom identity database.
+- Added shared Zod contracts for sign-in validation, standard errors, cursor pagination, date ranges, billing months, and 5 MB PDF/DOCX/JPG/PNG upload intents.
+- Added shared `DatePicker` and `MonthPicker` controls for reuse across modules.
+- Added the initial Hono API boundary for `/api/v1/me` and authorization policy tests covering own/other, scoped/unscoped, explicit Admin grants, and self-approval denial.
+- Recorded product-owner decisions for Admin read visibility, request management, claim defaults, upload policy, and deferred MFA in ADR-0003.
+- No database migration or AWS resource was created.
+
 ## 2026-11-09 - Typography and brand polish
 - Centralized the approved font family, type scale, weights, line heights, colors, and motion timing in `packages/ui/src/tokens.css`.
 - Normalized dashboard headings, labels, metrics, controls, tables, and chart text to remove inconsistent sizing and unnecessary bold weight.
