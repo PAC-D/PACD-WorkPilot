@@ -179,6 +179,15 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
 
+  apps/api:
+    dependencies:
+      '@pacd/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      hono:
+        specifier: 4.11.4
+        version: 4.11.4
+
   apps/web:
     dependencies:
       '@pacd/contracts':
@@ -737,6 +746,10 @@ packages:
 
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
+
+  hono@4.11.4:
+    resolution: {integrity: sha512-U7tt8JsyrxSRKspfhtLET79pU8K+tInj5QZXs1jSugO1Vq5dFj3kmZsRldo29mTBfcjDRVRXrEZ6LS63Cog9ZA==}
+    engines: {node: '>=16.9.0'}
 
   immer@11.2.9:
     resolution: {integrity: sha512-IQ4UEtXjZjyefyWjtLEDXUSrF6T2hwjKPi6BIJl3bY/2XXW24d6cNGdXJSBOA/+KNnuiXkZY6DR0C3efolhitA==}
@@ -1312,6 +1325,8 @@ snapshots:
     optional: true
 
   graceful-fs@4.2.11: {}
+
+  hono@4.11.4: {}
 
   immer@11.2.9: {}
 

@@ -1,0 +1,16 @@
+{
+  "name": "@pacd/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test src/**/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@pacd/contracts": "workspace:*",
+    "hono": "4.11.4"
+  }
+}
