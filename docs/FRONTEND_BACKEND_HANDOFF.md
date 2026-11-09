@@ -20,9 +20,9 @@
 | Project timeline | Local table rows | `/api/v1/dashboard/projects`; server-side authorization and opaque cursor pagination |
 | Work, claims, requests | Static rows | Contracted list/detail/mutation endpoints with Zod response validation and standardized error envelopes |
 | Review controls | Permission-gated visual state | Object-level server authorization on every action; enforce scope, transition policy, version, idempotency, and self-approval denial |
-| Pagination | Not active in dashboard fixture | Shared cursor pagination using `{limit,nextCursor,hasMore}`; never add offset or total pages |
+| Pagination | Not active in dashboard fixture | Shared signed keyset cursor pagination using `{limit,nextCursor,hasMore}`; never add offset or total pages |
 | Filtering | Display-only summary | Whitelisted query parameters that map to documented indexes; reset cursor when filters change |
-| Live updates | Static connected indicator | Authenticated AppSync Events; invalidate affected active TanStack Query keys; no record data in event payload |
+| Live updates | Static connected indicator | Local event adapter first, hosted authenticated transport later; invalidate affected active TanStack Query keys and never send record data in event payload |
 | Reconciliation | Manual refresh only | One-time active-query reconciliation after reconnect or meaningful focus return; no interval polling |
 | Files | No upload UI in this pass | Presign, direct private S3 upload, finalization, progress, validation, and authorized short-lived download |
 | Mutations | No writes in this pass | `Idempotency-Key`, entity version or `If-Match`, definitive mutation response, targeted cache updates, audit, and post-commit events |

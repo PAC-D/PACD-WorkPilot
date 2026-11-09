@@ -5,6 +5,8 @@ All changes require product-owner decision and, when technical choices change, a
 | Decision | Working default | Owner acceptance required |
 |---|---|---|
 | AWS region | TBD, example `us-east-1` not final | Yes |
+| Hosted runtime/provider | Local-first accepted; AWS-managed services versus VPS remains TBD | Yes before deployment |
+| Hosted PostgreSQL | Portable PostgreSQL accepted; Aurora/RDS versus VPS remains TBD | Yes before deployment |
 | Organization timezone | `Asia/Dhaka` | Confirm |
 | Claim type limits/caps | Accepted: no auto-payment; optional policy caps initially unset | Resolved 2026-11-09 |
 | Duplicate mobile/internet rule | Accepted: one active claim/type/person/month | Resolved 2026-11-09; marker release still TBD |
@@ -16,15 +18,16 @@ All changes require product-owner decision and, when technical choices change, a
 | Audit retention | TBD per policy and local legal requirements | Yes |
 | File allowed MIME/size | PDF/DOCX/JPG/PNG, 5 MB (5,000,000 bytes) per file | Resolved 2026-11-09 |
 | Receipt malware handling | Quarantine + validation; scanning design TBD | Yes |
-| Session duration | Cognito security policy TBD | Yes |
+| Session duration | Hosted identity-provider security policy TBD | Yes |
 | Privileged MFA | Deferred for v1; password login with controls in ADR-0003 | Resolved 2026-11-09 |
-| Email delivery | Cognito invitations; custom notification email deferred | Yes |
+| Email delivery | Hosted identity-provider invitations; custom notification email deferred | Yes |
 | Dashboard period | Default last 30 days, max 12 months | Confirm |
 | CloudFront/custom domain | TBD | Yes |
 | Employee identifier format | `emp-001` username example; actual format TBD | Yes |
 | Admin may amend others' submitted claims | Deny by default; explicit scoped permission/mandatory reason | Yes |
 | Financial mark-paid role | Explicit Super Admin grant only | Yes |
-| AppSync dynamic scope auth implementation | Security proof needed in staging, otherwise scoped broker design ADR | Yes |
+| Hosted event adapter and dynamic scope authorization | Provider and security proof TBD; scoped broker design may require ADR | Yes |
 | Event delivery operational SLO | Best effort, 5-second target | Confirm |
+| Project join-request states/schema | Route exists, persistence and exact transitions not yet contracted | Yes before module implementation |
 
 No agent should silently resolve these as implemented features. Defaults are provisional **only where explicitly indicated**.

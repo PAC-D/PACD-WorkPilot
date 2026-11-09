@@ -2,7 +2,7 @@
 
 ## Required levels
 - Unit: Zod schemas, state machines, policy evaluation, date/month handling, query key mapping, idempotency logic.
-- Integration: DynamoDB conditional transactions, indexes and bounded Query, Cognito mock/staging, upload finalization, event publisher duplicate stream delivery, authorized AppSync subscriptions.
+- Integration: PostgreSQL transactions, constraints, migrations, indexes and bounded keyset queries; identity mock/staging, upload finalization, outbox publisher duplicate delivery, and hosted event authorization.
 - API E2E: role/scope denial and allowed reads/writes, workflow review lifecycle, optimistic concurrency (409), pagination cursor signature/failure, idempotent retry.
 - Browser E2E: Playwright user/admin/super-admin flows, responsive layouts, keyboard navigation, connectivity loss/recovery, stale cache clearing on role change.
 - Security: cross-employee IDOR, forged admin grants, self-approval with all roles, cross-scope event leak, download authorization, invalid MIME, malicious upload, stale roles, brute-force protection.
@@ -18,7 +18,7 @@
 8. A user mutation invalidates authorized Admin charts and tables through event; no interval requests observed over idle 10-minute browser session.
 9. Missed event while offline reconciles once after reconnect; permissions revoked mid-session remove restricted cache and subscription.
 10. Event from department A cannot be observed on department B authorized connection.
-11. Large query always applies page limit, stable cursor and index; no Scan in request API.
+11. Large query always applies a page limit, stable keyset cursor and matching index; no unbounded request query or SQL offset pagination.
 12. Different chart representations show matching counts and accessible fallback table.
 13. Unknown/expired upload presign cannot yield readable shared file; authorization on every download.
 14. Simulate outage: DB throttling, event publisher failure, stale token, partial S3 upload and recovery.

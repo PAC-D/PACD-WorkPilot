@@ -1,24 +1,25 @@
 # HTTP API contract v1
 
-Base URL `/api/v1`; UTF-8 JSON; Cognito JWT bearer; all routes HTTPS; resource authorization always server-side. Typed Zod schemas in `packages/contracts`. Do not implement undocumented endpoints without contract update.
+Base URL `/api/v1`; UTF-8 JSON; provider-issued bearer identity in hosted environments; all hosted routes HTTPS; resource authorization always server-side. Local development uses an explicitly enabled fictional identity adapter and never accepts it in production. Typed Zod schemas in `packages/contracts`. Do not implement undocumented endpoints without contract update.
 
 ## Standard response conventions
-- Successful list: `{data:[...], page:{limit:20,nextCursor:"opaque-or-null",hasMore:true}}`; `nextCursor` encodes LastEvaluatedKey, query identity, expiry and signature. Never accept arbitrary DynamoDB key JSON from client. No misleading totalPages/offset, because this is DynamoDB.
+- Successful list: `{data:[...], page:{limit:20,nextCursor:"opaque-or-null",hasMore:true}}`; `nextCursor` encodes a keyset sort tuple, query identity, expiry and signature. Never accept raw SQL or an unsigned cursor from the client. No `totalPages` or offset pagination.
 - Single record: `{data:{...}}`.
 - Error: `{error:{code:"FORBIDDEN",message:"Access denied",requestId:"...",details?:{}}}`. Do not leak existence of inaccessible resources.
 - GET conditional requests may use `ETag`/If-None-Match where safe, but no server memory cache assumed.
 - Writes use `Idempotency-Key` on create/approval/finalization and `If-Match` or payload `version` for updates.
-- Limit default 20, max 100. Filters whitelisted and converted to key/index query, not Scan.
+- Limit default 20, max 100. Filters are whitelisted and converted to parameterized indexed SQL.
 
 ## Route registry
 | Verb | Path | Behavior |
 |---|---|---|
 | GET | `/me` | Profile and effective permissions (no secrets) |
+| GET | `/development/identities` | Local development only: fictional identity selector; route is absent when local auth is disabled |
 | GET | `/users` | Scoped directory, cursor |
-| POST | `/users` | Super Admin provisions Cognito temporary login + profile |
+| POST | `/users` | Super Admin provisions hosted-provider login + profile |
 | PATCH | `/users/:id` | Profile, status; admin changes separately guarded |
 | PUT | `/users/:id/grants` | Super Admin grant update with policy version |
-| POST | `/users/:id/reset-password` | Privileged Cognito temporary reset; no plaintext response |
+| POST | `/users/:id/reset-password` | Privileged hosted-provider reset; no plaintext response |
 | GET/POST | `/projects` | List/create (POST requires permission) |
 | GET/PATCH | `/projects/:id` | Details/edit with version |
 | POST | `/projects/:id/members` | Assign membership, timestamps |
@@ -47,10 +48,10 @@ Base URL `/api/v1`; UTF-8 JSON; Cognito JWT bearer; all routes HTTPS; resource a
 `?limit=20&cursor=<opaque>&status=...&projectId=...&from=2026-11-01&to=2026-11-30`. If filters/sort change, discard cursor. `cursor` signatures bind viewer, query parameters, expiry and policyVersion; return 400/410 on mismatch/expiry. All time ranges bounded.
 
 ## Real-time contract
-Not a business API: AppSync Events publishes `EntityChanged` `{eventId,type,entityId,scope,version,occurredAt}`; no records or secrets. See `REALTIME_CACHE.md` and `contracts/event.schema.json`.
+Not a business API: the selected authorized event adapter publishes `EntityChanged` `{eventId,type,entityId,scope,version,occurredAt}`; no records or secrets. Local development may use an in-process adapter; AppSync Events is only an AWS candidate. See `REALTIME_CACHE.md` and `contracts/event.schema.json`.
 
 ## Access examples
-`POST /claims/:id/review` requires `claims.approve.scope`, correct scope, different claim owner, allowed status transition; checks after JWT authentication. `PUT /users/:id/grants` only for Super Admin, never ordinary Admin.
+`POST /claims/:id/review` requires `claims.approve.scope`, correct scope, different claim owner, allowed status transition; checks after authenticated identity resolution. `PUT /users/:id/grants` only for Super Admin, never ordinary Admin.
 
 ## Response status
 201 created, 200 success, 204 success/no content, 400 validation, 401 unauthenticated, 403 forbidden, 404 absent/inaccessible, 409 version/idempotency conflict, 413 upload too large, 429 throttled, 500 sanitized internal failure.

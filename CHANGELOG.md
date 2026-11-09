@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-09 - Local PostgreSQL runtime foundation
+- Accepted ADR-0004, replacing the DynamoDB-specific baseline with portable PostgreSQL and keeping the hosted provider undecided.
+- Added Docker Compose local PostgreSQL, placeholder-only environment configuration, versioned checksum-verified SQL migrations, and a bounded `pg` connection pool.
+- Added platform, projects/work, and claims/requests/files relational schemas with foreign keys, check constraints, indexes, append-only audit enforcement, idempotency records, and a transactional outbox.
+- Added a local Hono Node server plus database migration, readiness and integration-test commands.
+- Added a development-only fictional identity adapter, idempotent seed command, browser CORS policy, and beginner local-run guide.
+- Updated architecture, API pagination, testing, runbook, AWS candidate deployment, and frontend handoff documentation.
+- No AWS, VPS, Supabase, or other hosted resource was created.
+
 ## 2026-11-09 - Login and backend policy foundation
 - Added an original responsive PACD WorkPilot login screen with accessible username/password controls, restrained motion, reduced-motion support, and a development-only dashboard preview.
 - Added an authentication adapter boundary without storing passwords or introducing a custom identity database.

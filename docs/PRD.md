@@ -12,13 +12,13 @@ An employee can submit a work update, expense receipt or request in under 60 sec
 
 ## Module requirements
 ### Identity and user provisioning
-Super Admin adds employee code (unique), display name, username, optional email/phone, department, role(s), scopes, then creates Cognito account with generated temporary password. Force password change on first login. Account actions: disable/enable, reset temporary password, revoke sessions, role assignment, permission grants/revocations. Public registration disabled. Passwords never stored in PACD WorkPilot DB. MFA is deferred for v1 by product-owner decision; the login and identity adapter must remain compatible with enabling Cognito MFA later. See ADR-0003.
+Super Admin adds employee code (unique), display name, username, optional email/phone, department, role(s), scopes, then provisions an account through the approved hosted identity provider. The hosted provider must issue and rotate credentials; force credential change on first login when supported. Account actions: disable/enable, reset credential, revoke sessions, role assignment, permission grants/revocations. Public registration is disabled. Passwords are never stored in PACD WorkPilot PostgreSQL. Local development uses selectable fictional identities, never real credentials. MFA is deferred for v1 by product-owner decision; the identity adapter must remain compatible with enabling hosted-provider MFA later. See ADR-0003 and ADR-0004.
 
 ### Projects
 Project code, name, owner, description, start date, planned end date, actual end date, status (PLANNED/ACTIVE/ON_HOLD/COMPLETED/ARCHIVED), member assignments, assignment date, assigned_by, optional due date per member. Each project may be visible to approved members/admin scopes. User may request to join; no automatic access to unassigned project. Track assignment and removal history.
 
 ### Work activities
-Project, title, category, notes, date, status (PLANNED/IN_PROGRESS/BLOCKED/COMPLETED), optional attachment, optional time spent. Updates to same activity are appended to activity history. Search/filter by date, project, employee, category, status. No productivity rankings or mandatory activity timer. Admin sees only scoped data.
+Project, title, category, notes, date, status (PLANNED/IN_PROGRESS/BLOCKED/COMPLETED), optional attachment, optional time spent. Updates to same activity are appended to activity history. Search/filter by date, project, employee, category, status. No productivity rankings or mandatory activity timer. Admin has organization-wide read visibility; write and review actions still require explicit grants.
 
 ### Monthly claims
 Use term **Claims** (not quotations). Types: MOBILE_BILL, INTERNET_BILL, TRAVEL_ALLOWANCE and configuration-defined types. Each has `periodMonth YYYY-MM`, amount minor units + currency BDT, supporting attachments, memo, created/submitted dates; states DRAFT/SUBMITTED/UNDER_REVIEW/NEEDS_INFO/APPROVED/REJECTED/PAID. Only server-approved transitions. Claim policy can define per-category caps, deadlines and one-active-claim-per-period for mobile/internet; travel may have multiple claims. Reject/needs-info requires reason. Edits after submission require claim return to NEEDS_INFO, resubmit, or explicit scoped override with audit. Reimbursement does not imply payment; mark PAID only when granted.
@@ -35,7 +35,7 @@ Page-based navigation, clear action verbs, shared table/filter/search/date/month
 
 ## Core business invariants
 - No account self-registration. Only Super Admin can create admins or super admins; bootstrap first account via one-time secured admin provisioning.
-- Admin can modify or approve another user's claim only with explicit permission **and matching scope**. `claims.edit.own` does not imply `claims.edit.any`; `claims.approve.any` does not imply `claims.approve.own`.
+- Admin can modify or approve another user's claim only with explicit permission **and matching scope**. `claims.edit.own` does not imply `claims.edit.scope`; `claims.approve.scope` never implies self-approval.
 - Claims self-approval disabled across **all roles** in v1, irrespective of UI setting. Super Admin configuration displays this as a locked policy; any future exception requires security ADR, dual control and tested policy changes.
 - A request or claim receives a unique non-guessable ID and immutable creator. Approval actions audit actor, from/to state, timestamp, reason, policy version.
 - Same logical mutation cannot double-submit under retry: `Idempotency-Key` and conditional writes.
@@ -50,7 +50,7 @@ Target <=30 accounts, responsive dashboard; initial app load under 3s on typical
 ## Acceptance examples
 1. USER creates claim for October on November 9; October report shows it.
 2. A User cannot see another employee's claim or subscribe to that employee's event channel; Admin organization-wide read remains server-authorized and does not grant approval.
-3. Admin without `claims.approve.any` sees no approve action; direct API POST is 403.
+3. Admin without `claims.approve.scope` sees no approve action; direct API POST is 403.
 4. Attempt to self-approve is 403 even if assigned broad admin rights.
 5. USER updates activity; Admin connected to matching authorized channel receives invalidation and active chart/list refresh without timer.
 6. Connection drops; on reconnect active dashboard reconciles once to avoid missed event divergence.

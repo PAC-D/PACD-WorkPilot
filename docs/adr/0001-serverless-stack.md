@@ -1,9 +1,11 @@
 # ADR-0001: Cost-conscious AWS serverless stack
 
-**Status:** Accepted baseline, subject to final region/security checks | **Date:** 2026-11-09
+**Status:** Partially superseded by ADR-0004 for database and local runtime | **Date:** 2026-11-09
 
 ## Decision
 React/Vite SPA via S3/CloudFront; Hono TypeScript API on Lambda behind API Gateway HTTP API; DynamoDB on-demand domain tables; Cognito invite-only; S3 documents; AppSync Events and DynamoDB Streams for invalidation.
+
+ADR-0004 replaces DynamoDB with portable PostgreSQL and defers the hosted runtime/provider decision. The original AWS stack remains historical context, not authorization to deploy.
 
 ## Drivers
 <=30 active accounts; minimal idle compute costs; no user-visible polling; granular per-admin permissions; easy maintainability; future AWS deployment.

@@ -4,14 +4,14 @@
 - React Query `refetchInterval: false` globally and per-query. No `setInterval`, SWR refresh timers, `window.location.reload()` for data sync, or backend scheduled dashboard reads.
 - On initial view: query API once. On any successful local mutation: set returned entity in detail cache and invalidate exactly affected list/summary keys. On **remote committed mutation**: receive authorized event, invalidate affected query keys. Only mounted/active queries refetch automatically; inactive caches become stale and load when visited.
 - On reconnect/focus after interruption: reconcile relevant active queries **once**. This is event-driven recovery, not an interval. Debounce burst event invalidations 150–300ms; no cross-employee shared state cache.
-- Real-time transport is **AWS AppSync Events** with Cognito-based publish/subscribe security. Clients subscribe to scoped channels based on server-authorized grants, but client-provided channel names are never sufficient authorization. No `API_KEY` public subscription to private records.
+- Real-time transport is an authorized provider adapter. Local development may use an in-process adapter; AppSync Events is an AWS candidate only. Clients subscribe to scoped channels based on server-authorized grants, but client-provided channel names are never sufficient authorization. Never expose a public subscription to private records.
 
 ## Channel design
-`/org/<orgId>/admins/<departmentId>/claims`, `/org/<orgId>/admins/<departmentId>/activities`, `/org/<orgId>/admins/<departmentId>/requests`, `/org/<orgId>/projects/<projectId>`, `/org/<orgId>/users/<sub>`. AppSync channel authorization must verify user identity + current grants; on revocation disconnect/re-subscribe and reject old channel entitlement. If AppSync auth capability cannot enforce dynamic scoped authorization directly, implement an authorized subscription broker or narrower identity-specific fanout via Lambda and document ADR **before launch**. Never rely on simple guessed channel paths.
+`/org/<orgId>/admins/claims`, `/org/<orgId>/admins/activities`, `/org/<orgId>/admins/requests`, `/org/<orgId>/projects/<projectId>`, `/org/<orgId>/users/<sub>`. Channel authorization must verify user identity plus current grants; on revocation disconnect/re-subscribe and reject old channel entitlement. If a hosted transport cannot enforce dynamic authorization directly, implement an authorized subscription broker or narrower identity-specific fanout and document an ADR **before launch**. Never rely on guessed channel paths.
 
 ## Event lifecycle
 1. Request validates and writes entity + audit + event marker transactionally.
-2. DynamoDB Streams trigger event publisher after commit.
+2. A durable publisher reads committed PostgreSQL outbox rows and publishes after commit; local development may use an in-process adapter.
 3. Publisher validates event marker, publishes non-sensitive event to authorized channels; retries are deduped and version checked.
 4. Viewer receives event; query-key map invalidates `claims.list`, `claims.detail:id`, `dashboard.summary` for matching claim event, etc.
 5. Active queries refetch from API and server rechecks access. No event payload used to update financial values.
@@ -29,7 +29,7 @@
 `useQuery({queryKey: queryKeys.claims.list({viewer,month,status,cursor}),queryFn,refetchInterval:false})`. On claim event, invalidate matching scope list, affected claim detail and dashboard summary. In tables retain previous-page data during page transitions, but show loading state and no stale approval controls.
 
 ## Failure modes
-- AppSync outage: UI indicates **Live updates disconnected**, manual refresh available, reconnect reconciliation restores state; core CRUD works.
+- Event transport outage: UI indicates **Live updates disconnected**, manual refresh remains available, reconnect reconciliation restores state; core CRUD works.
 - Long idle tab/browser suspension: reconnect/focus sync once.
 - Duplicate event: version comparison and invalidation batching.
 - Missing event: reconnect/focus/manual refresh, plus server revision checks when opening detailed records.

@@ -1,7 +1,7 @@
 # Security, identity and authorization specification
 
 ## Identity
-Amazon Cognito User Pool (Lite to start), invite-only, no self-signup. Username = immutable employee login such as `emp-001`; `employeeCode` separate unique business ID. Cognito subject (`sub`) is binding identity primary key; application keeps profile and grants. Super Admin creates account via backend `AdminCreateUser`, temporary random password handled by Cognito, first login requires `NEW_PASSWORD_REQUIRED`. Never generate or return reusable passwords in a list, never store them in DynamoDB, logs, frontend storage, seed files or emails sent by the app. For first bootstrap, privileged operator executes audited one-time provisioning with least-privileged AWS access. MFA is not required in v1 by product-owner decision (ADR-0003). This increases password-compromise risk, so throttling, secure recovery, short-lived tokens, session revocation and login monitoring remain required. The identity boundary must allow MFA to be enabled without redesigning domain modules.
+Production identity remains designed for an invite-only Cognito User Pool until deployment approval, with no self-signup. Local development uses an explicit mock adapter with fictional identities and never stores passwords. Username is an immutable employee login such as `emp-001`; `employeeCode` is a separate unique business ID. Provider subject (`sub`) is the binding identity primary key; PostgreSQL keeps the application profile and grants. Never generate or return reusable passwords in a list or store them in PostgreSQL, logs, frontend storage, seed files or application email. MFA is deferred for v1 by product-owner decision (ADR-0003); the identity boundary must allow it later without redesigning domain modules.
 
 ## Role and permission evaluation
 `effective = activeUser AND authenticated AND hasExplicitPermission AND inAuthorizedScope AND passesObjectPolicy AND transitionAllowed`.
@@ -25,13 +25,13 @@ Request assignment and acceptance are Super Admin capabilities by default. An Ad
 - Super Admin sets grants per admin, chooses review scope and approval rights, cannot switch on a self-approval toggle in v1.
 
 ## API controls
-Gateway JWT plus API object-level authorization; use conditional writes, CSRF-safe auth flow when using cookies (or PKCE with secure token handling), strict CORS allowlist, HTTP security headers, rate limits at gateway/WAF where budget allows. All authenticated S3 uploads use scoped presigned URLs after authorization and validated completion. File extensions, MIME sniffing, size caps, content scanning strategy, private bucket, expiring read URLs; never public ACL. For high-risk documents, add malware scanning before public release to reviewers and quarantine unknown files. Audit sensitive events.
+Identity token verification plus API object-level authorization; use version-checked SQL writes, CSRF-safe auth when using cookies (or PKCE with secure token handling), strict CORS, security headers and hosted rate limits. Hosted object uploads use scoped presigned URLs only after authorization and validated completion. Local file adapters use fictional files and remain private to the development machine. Validate extensions, detected MIME and size; never expose a public upload directory. Audit sensitive events.
 
 ## Audit requirements
-Immutable append-only: `actorSub`, `action`, `resourceType`, `resourceId`, `oldState`, `newState`, `reason`, `timestamp`, `requestId`, `permissionPolicyVersion`. Redact passwords, secrets, PII from logs. Audit read access only to authorized users. Protect records using restricted IAM and backups; DynamoDB alone does not provide an immutable/WORM guarantee.
+Immutable append-only: `actorSub`, `action`, `resourceType`, `resourceId`, `oldState`, `newState`, `reason`, `timestamp`, `requestId`, `permissionPolicyVersion`. Redact passwords, secrets and PII from logs. PostgreSQL rejects audit update/delete operations, but this is not a WORM guarantee; hosted infrastructure also requires restricted credentials and backups.
 
 ## Threat scenarios
 IDOR, permission scope leak through query or event channel, forged approval, duplicate claim replay, stale admin privilege after revoke, malicious file upload, overly broad S3 presign, stream duplicate event, audit editing, employee enumeration, excessive exports. Each needs negative tests.
 
 ## Operational safeguards
-CloudWatch logs with retention, CloudTrail for AWS-level audit as budget allows, DynamoDB PITR (budget explicitly assessed), S3 versioning/lifecycle, encryption, budget alerts. Disable account and revoke sessions for departures. No secrets in git. Backup restore and emergency access drills.
+Hosted logs need retention; provider-level audit, PostgreSQL PITR/backups, private object versioning/lifecycle, encryption and budget alerts require deployment approval. Disable accounts and revoke sessions for departures. No secrets in git. Test database and file restore plus emergency access.

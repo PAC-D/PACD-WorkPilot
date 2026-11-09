@@ -1,70 +1,61 @@
-# DynamoDB logical data model and access patterns
+# PostgreSQL logical data model and access patterns
 
-**Important:** DynamoDB is not a relational database. Tables below specify bounded query access patterns. No direct browser reads, no request-path Scan, no unbounded filtering or SQL-style offset. Document new GSI needs before coding them.
+ADR-0004 replaces the DynamoDB baseline with portable PostgreSQL 16 or newer. The browser never connects to PostgreSQL. Every query is executed through the Hono API after authentication, permission, scope and object-policy checks.
 
-## Tables (v1: small bounded set)
-Use separate tables to keep reasoning simple; `PK` partition key, `SK` sort key, and explicitly defined GSIs. Physical index names may be configured with env prefixes. Use ULID/UUIDv7-like sortable IDs when helpful, but no reliance on sequential IDs for security.
+Versioned SQL migrations live in `apps/api/migrations/`. Applied migrations are immutable and checksum-verified. Never edit an applied migration; add the next numbered file.
 
-| Table | Primary key | GSIs / key patterns | Purpose |
-|---|---|---|---|
-| `Accounts` | `sub` | `UsernameIndex(username)`, `DepartmentIndex(departmentId,sub)` | Profile, status, permissionVersion, role grants, scopes |
-| `Projects` | `projectId` | `StatusStartIndex(status,startDate)`, `OwnerIndex(ownerSub,projectId)` | Dates, status, owner, visibility |
-| `ProjectMembers` | `PK=projectId`, `SK=userSub` | `UserProjectsIndex(userSub,projectId)` | Assignment/assignedAt/removedAt/history pointer |
-| `Activities` | `activityId` | `UserDateIndex(userSub,createdAt#activityId)`, `ProjectDateIndex(projectId,createdAt#activityId)`, `ScopeDateIndex(scopeKey,createdAt#activityId)` | Work activity state/category/version |
-| `ActivityUpdates` | `PK=activityId`, `SK=createdAt#updateId` | none | Append-only descriptions and status transitions |
-| `Claims` | `claimId` | `UserPeriodIndex(userSub,periodMonth#claimId)`, `ScopeStatusIndex(scopeStatusKey,submittedAt#claimId)`, `PeriodTypeIndex(periodTypeKey,submittedAt#claimId)` | Claim type, amountMinor, currency, periodMonth, state, version |
-| `Requests` | `requestId` | `UserDateIndex(requesterSub,createdAt#requestId)`, `ScopeStatusIndex(scopeStatusKey,createdAt#requestId)`, `TypeDateIndex(typeKey,createdAt#requestId)` | Validated payload, status, reviewer, version |
-| `SystemRecords` | `PK`, `SK` | `EventStatusIndex(eventStatus,createdAt#eventId)` optional | Departments, categories, policies, role templates, approval history, audit, notifications, events, idempotency, summaries, attachment metadata |
+## Core tables
 
-`scopeStatusKey` is a **denormalized projection** for a specific department/project scope + status; for records with multiple authorized scopes create projection items in `SystemRecords` or a dedicated index table, and clean them on scope changes. Do not concatenate multiple scope IDs into one key and hope query filters work. GSI keys must be materialized and maintained atomically where possible.
+| Domain | Tables | Purpose |
+|---|---|---|
+| Identity | `departments`, `accounts`, `account_grants` | Profiles, roles, permission versions and explicit scoped grants |
+| Reliability | `idempotency_records`, `audit_records`, `outbox_events` | Retry safety, append-only audit and post-commit invalidation events |
+| Projects | `projects`, `project_memberships` | Project milestones and assignment/removal history |
+| Work | `activities`, `activity_updates` | Current activity state and append-only updates |
+| Files | `files` | Metadata for local or hosted private objects; never file bytes in PostgreSQL |
+| Claims | `claims`, `claim_files`, `claim_reviews` | Monthly claims, attachments and review history |
+| Requests | `requests`, `request_reviews` | Fixed request types, allowlisted payload and review history |
 
-## Example key families in SystemRecords
-`CONFIG#DEPARTMENT` / `id`; `CONFIG#CATEGORY` / `id`; `CONFIG#CLAIM_TYPE` / `id`; `CONFIG#REQUEST_TYPE` / `id`; `CONFIG#PERMISSIONS` / `version`; `AUDIT#resourceType#resourceId` / `timestamp#eventId`; `EVENT#eventId` / `META`; `IDEMPOTENCY#actorSub` / `key`; `FILE#fileId` / `META`; `SUMMARY#scopeKey#YYYY-MM-DD` / `metric`; `PROJECT_ASSIGNMENT#projectId` / `timestamp#userSub`.
-
-## Representative records
-### Claim
-```json
-{
- "claimId":"clm_01...","userSub":"cognito-sub","departmentId":"dept_ops",
- "type":"MOBILE_BILL","periodMonth":"2026-10","amountMinor":125000,"currency":"BDT",
- "status":"SUBMITTED","submittedAt":"2026-11-09T03:00:00Z",
- "attachmentIds":["file_01..."],"version":3,"createdAt":"...","updatedAt":"..."
-}
-```
-### Project
-```json
-{
- "projectId":"prj_01...","code":"PKNP","name":"PicknPack","ownerSub":"...",
- "startDate":"2026-11-01","plannedEndDate":"2027-02-28","actualEndDate":null,
- "status":"ACTIVE","createdAt":"...","updatedAt":"...","version":1
-}
-```
+Project join-request persistence and configuration tables are deferred until their exact workflow schemas are approved. Claim duplicate enforcement is also deferred until the uniqueness-marker release rule for rejected/cancelled claims is decided. These gaps remain in `OPEN_DECISIONS.md` rather than being guessed in SQL.
 
 ## Mandatory access patterns
-| Query | Key/index path | Limits |
+
+| Query | Index/order | Limit |
 |---|---|---|
-| My claims for month | `Claims.UserPeriodIndex` userSub + `begins_with(periodMonth#)` | 20, cursor |
-| Admin pending claims in one permitted department | `Claims.ScopeStatusIndex` `dept#id#SUBMITTED` | 20, cursor |
-| My activities latest | `Activities.UserDateIndex` | 20, cursor |
-| Project activity latest | `Activities.ProjectDateIndex` | 20, cursor and project authorization |
-| Employee project list | `ProjectMembers.UserProjectsIndex` + bounded BatchGet Projects | 20, cursor |
-| All active projects | `Projects.StatusStartIndex` | 20, cursor |
-| Requests by assigned review scope/status | `Requests.ScopeStatusIndex` | 20, cursor |
-| Audit for one entity | `SystemRecords` `AUDIT#type#id` | 20, cursor |
-| Chart 30-day trend | `SUMMARY#scopeKey#date` items via bounded BatchGet / bounded query | at most 30 buckets |
-| Project milestones | `Projects.StatusStartIndex` by known statuses + bounded merge | 20, cursor per status / explicit combined endpoint |
+| My claims by month | `claims(user_sub, period_month DESC, claim_id DESC)` | 20 default, 100 maximum |
+| Admin claims by department/status | `claims(department_id, status, submitted_at DESC, claim_id DESC)` | 20 default, keyset cursor |
+| My latest activities | `activities(user_sub, activity_date DESC, activity_id DESC)` | 20 default, keyset cursor |
+| Project activities | `activities(project_id, activity_date DESC, activity_id DESC)` | 20 default, project authorization |
+| Employee projects | `project_memberships(account_sub, assigned_at DESC, membership_id DESC)` joined to authorized projects | 20 default |
+| Projects by status/start | `projects(status, start_date DESC, project_id DESC)` | 20 default |
+| Requests by department/status | `requests(department_id, status, created_at DESC, request_id DESC)` | 20 default |
+| Requests by assigned reviewer | `requests(assigned_reviewer_sub, status, created_at DESC, request_id DESC)` | 20 default |
+| Audit for one resource | `audit_records(resource_type, resource_id, occurred_at DESC, audit_id DESC)` | 20 default |
+| Pending outbox events | partial `outbox_events(occurred_at,event_id)` where unpublished | bounded worker batch |
 
-Multi-scope Admin reports either issue bounded queries per permitted scope (max configured at 30 users), then stable merge, or read precomputed org/department summaries; never leak global counts to scoped users. For arbitrary keyword search in v1, search a **bounded indexed candidate set** (no fuzzy global scan), with explicit UX limits. User directory can use paginated department keys; global <=30 browse may use bounded admin-only fetch, but still max 100 and no arbitrary Scan in request path.
+Lists use stable keyset pagination. Opaque signed cursors bind the viewer, policy version, filters, sort tuple and expiry. SQL `OFFSET` is not used for request pagination. Every list query has a hard limit and matching index; arbitrary unbounded exports remain prohibited.
 
-## Data correctness
-- DynamoDB transaction condition and version attribute enforce optimistic concurrency. Return HTTP 409 if stale version.
-- Strong reads where required after create/update if base table supports them; GSIs are eventually consistent. Client receives saved entity from mutation response; later queries reconcile.
-- Idempotency keyed by actor + route + client key, with request hash and TTL; conflicting reuse rejected.
-- `periodMonth` `YYYY-MM`, date-only `YYYY-MM-DD`, timestamps ISO UTC. BDT stored integer minor units, never binary floating point.
-- Records have `createdAt`, `updatedAt`, `createdBy`, `version`; no hard deletion of approved transactions. Use status/archivedAt.
-- Keep file content in S3; only `fileId`, object key, owner, security state, type and size in metadata. Authorized download presigns generated on demand. V1 accepts PDF, DOCX, JPG and PNG up to 5 MB (5,000,000 bytes) per file; extension, declared MIME, detected type and size must agree during finalization.
-- Claim duplicate rules must be enforced with dedicated transactionally written uniqueness marker, e.g. `UNIQUE_CLAIM#user#type#period`, and released only under defined cancellation/rejection policy; travel exempt.
-- Events stream may deliver duplicates/out of order: dedupe by event ID and compare versions; never apply event payload as entity state.
+## Transaction rules
+
+One transaction owns the entity mutation, audit record, idempotency result and outbox event. Services own business rules; repositories own parameterized SQL and transaction mechanics.
+
+- `version` implements optimistic concurrency; stale updates return HTTP 409.
+- Idempotency is keyed by actor, route and client key with a request hash and expiry.
+- Audit rows are append-only; PostgreSQL rejects update or deletion.
+- Outbox payloads contain only `{type,entityId,scope,version,occurredAt}` semantics, never sensitive entity data.
+- Foreign keys protect ownership and membership relationships.
+- Check constraints enforce the contracted roles, states, money/date shapes and upload limits.
+- BDT uses integer minor units, never floating-point values.
+- Date-only values use PostgreSQL `date`; timestamps use `timestamptz` and are emitted as UTC ISO 8601.
+
+## Local and hosted storage
+
+Local development stores only file metadata until the local file adapter is implemented. Hosted deployment will use private object storage. V1 accepts PDF, DOCX, JPG and PNG up to 5,000,000 bytes; extension, declared MIME, detected MIME and size must agree before finalization.
+
+## Database connections
+
+The local Node server owns one bounded `pg` pool with at most five connections. Transactions always use one checked-out client and release it in `finally`. A later serverless deployment must select and test its connection strategy through a deployment ADR; it must not create unbounded per-request database connections.
 
 ## Retention and recovery
-Specify policy per record category before production. DynamoDB PITR, backup and restore tested; audit retention decided by business/legal owner. Never set TTL on approved financial records by default.
+
+Retention is not yet approved. Never delete approved financial records or audit history by default. Before production, document and test PostgreSQL backups, point-in-time recovery where available, migration rollback, and restore into a separate database before controlled cutover.

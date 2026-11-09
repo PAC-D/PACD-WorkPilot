@@ -1,6 +1,6 @@
 # PACD WorkPilot | Internal Work and Employee Operations
 
-> **Status:** Frontend login and typed demo foundation in progress; backend contract and policy foundation started, AWS adapters not implemented.
+> **Status:** Local-first implementation in progress: React frontend, Hono Node API and PostgreSQL migrations. Hosted adapters are not implemented.
 > **Version:** 1.0.0 | **Updated:** 2026-11-09 | **Audience:** product owners, developers, coding agents and operations.
 
 A small internal application for **at most 30 active employee accounts**. It supports work updates, project allocations, monthly expense claims, internal requests, and management reporting. Three user-facing roles: **USER, ADMIN, SUPER_ADMIN**. Role labels do not grant blanket privileges: effective access comes from explicit policy and scope.
@@ -20,23 +20,23 @@ A small internal application for **at most 30 active employee accounts**. It sup
 | UI | Tailwind CSS + shadcn/ui (Radix primitives), Lucide icons, Recharts |
 | Data fetching | TanStack Query; typed fetch client; Zod validation |
 | Forms | React Hook Form + Zod |
-| Backend | Node.js TypeScript, Hono HTTP API, AWS Lambda |
-| API entry | Amazon API Gateway HTTP API (not REST API product) |
-| Database | DynamoDB, on-demand capacity; bounded domain tables, not SQL |
-| Login | Amazon Cognito User Pool Lite; invite-only username/password |
-| File storage | Private Amazon S3 + presigned PUT/GET, validated finalization |
-| Live invalidation | AWS AppSync Events: event notification only, then targeted TanStack Query invalidation |
-| Event publication | DynamoDB Streams -> Lambda publisher (after committed mutations) |
-| Hosting | S3 + CloudFront for compiled SPA |
-| IaC | AWS CDK (TypeScript), one environment stack per stage |
-| Logging | CloudWatch structured JSON with correlation IDs and redacted PII |
-| No now | Redis, RDS, Aurora, EC2, ECS, App Runner, Kubernetes, cron polling, SSR, Next.js, microservices, GraphQL business API |
+| Backend | Node.js TypeScript, Hono HTTP API; local Node runtime, hosted adapter later |
+| API entry | Local Hono server; hosted gateway selected during deployment |
+| Database | Portable PostgreSQL 16+, local through Docker Compose |
+| Login | Development-only fictional identity adapter locally; hosted provider selected before deployment |
+| File storage | Local private adapter for development; hosted private object storage selected before deployment |
+| Live invalidation | Provider adapter: event hint only, then targeted TanStack Query invalidation |
+| Event publication | PostgreSQL transactional outbox -> hosted publisher adapter |
+| Hosting | Not selected; AWS and VPS remain candidates |
+| IaC | Added only after hosting approval |
+| Logging | Structured JSON with correlation IDs and redacted PII |
+| No now | Redis, Supabase platform, Firebase, Prisma, cron polling, SSR, Next.js, microservices, GraphQL business API |
 
-**Deployment constraint:** AWS pay-for-usage does not mean literally zero baseline cost. CloudFront/S3 storage and traffic, logs, AppSync connection-minutes, and optional DNS/domain services can incur cost. Validate the region, prices, service quotas, and budget before deploying. DynamoDB and Lambda are usage based; no private VPC/NAT Gateway in v1.
+**Deployment constraint:** local development incurs no cloud cost. Before any hosted deployment, approve the provider, region, database topology, identity, private file storage, backup policy and budget. ADR-0004 keeps PostgreSQL portable so this decision can be made later.
 
 ## User journeys
 - **User** selects assigned projects, logs or revises activity, uploads expenses by billing month, submits requests, and tracks status.
-- **Admin** sees scoped work, requests and claims; reviews only if explicitly granted; can see project assigned/end dates and reporting charts.
+- **Admin** has organization-wide read visibility; reviews or manages only when explicitly granted; can see project assigned/end dates and reporting charts.
 - **Super Admin** invites/disables identities, assigns roles/scopes and approval policy, manages projects/categories/request types, and audits changes. Super Admin is not exempt from financial self-approval restrictions.
 
 ## Key acceptance rules
@@ -45,23 +45,39 @@ A small internal application for **at most 30 active employee accounts**. It sup
 - Admin role assignment, claims self-approval and claims self-editing are **independent permissions**; self-approval default **DENY**.
 - Date-only project milestones use `YYYY-MM-DD`; timestamps UTC ISO 8601, displayed in configured organization timezone (`Asia/Dhaka` initially).
 - Monthly claims use `period_month` = `YYYY-MM`, not submission month. Multiple travel claims allowed; duplicate bill policy configurable.
-- Pagination is server-side with capped `limit` (default 20, max 100), stable sort and **opaque DynamoDB cursors**, not fabricated SQL offset.
+- Pagination is server-side with capped `limit` (default 20, max 100), stable sort and opaque signed keyset cursors, never SQL offset.
 - Audit all security-sensitive changes. Every write is authenticated, authorized, validated, idempotent when retried, and emits a post-commit invalidation event.
 
 ## Local development
-Install the Node.js version pinned in `.node-version` and pnpm version declared in `package.json`. Run `pnpm install`, then `pnpm dev` for the local Vite frontend. Use `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build` before submitting changes.
+Install the Node.js version pinned in `.node-version`, pnpm from `package.json`, and Docker Desktop/Engine. The beginner walkthrough and troubleshooting are in [Local development](docs/LOCAL_DEVELOPMENT.md). The normal sequence is:
 
-The current frontend has a production-oriented login screen with an unconfigured authentication adapter. Development builds expose fictional typed dashboards through an explicit preview control and role selector for USER, ADMIN, and SUPER_ADMIN. It is not connected to Cognito, the HTTP API, DynamoDB, S3, or AppSync Events. See [frontend to backend handoff](docs/FRONTEND_BACKEND_HANDOFF.md) before replacing fixtures.
+```bash
+cp .env.example .env
+# Replace POSTGRES_PASSWORD in .env with a random local-only password.
+pnpm install
+pnpm db:up
+pnpm db:migrate
+pnpm db:seed
+pnpm db:check
+pnpm dev
+```
+
+Open `http://127.0.0.1:5173`. The API listens at `http://127.0.0.1:3000`. `pnpm db:seed` creates only fictional local identities and stores no passwords. A local API request selects one explicitly with `X-WorkPilot-Local-User: local-user`; this adapter and its directory route are absent unless `LOCAL_AUTH_ENABLED=true`, and configuration rejects that setting in production. `pnpm dev` runs both processes; `pnpm dev:web` and `pnpm dev:api` run them separately. Stop PostgreSQL with `pnpm db:down`; the named Docker volume preserves local data.
+
+Use `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:integration`, and `pnpm build` before submitting changes. Never commit `.env`; `.env.example` contains placeholders only.
+
+The current frontend has a production-oriented login screen with an unconfigured authentication adapter. Development builds expose fictional typed dashboards through an explicit preview control and role selector. PostgreSQL and the local API now run independently, but the frontend fixtures are not connected to them yet. See [frontend to backend handoff](docs/FRONTEND_BACKEND_HANDOFF.md).
 
 Shared color, typography, and motion tokens live in `packages/ui/src/tokens.css`. Repository branding is sourced from `assets/logo_left.png` and `assets/favicon.png`; Vite serves that directory directly in development and copies the assets into production builds.
 
 ## Repository design
 ```text
 apps/web/                  React SPA and typed demo dashboards
-apps/api/                  Hono Lambda entry and domain services (planned)
+apps/api/                  Hono API, PostgreSQL migrations and domain services
 packages/contracts/        Zod schemas and typed API/event contracts
 packages/ui/               Shared UI/design tokens/components
-infra/                     CDK stacks, IAM, budgets (planned)
+compose.yaml               Local PostgreSQL
+infra/                     Hosted infrastructure after approval (planned)
 contracts/                 Versioned JSON schemas/examples
 .docs or docs/             ADRs, PRD, security, data, deployment, tests
 ```
@@ -69,10 +85,10 @@ contracts/                 Versioned JSON schemas/examples
 ## Delivery criteria
 Complete all acceptance tests, a threat-model review, accessibility checks, a cost review, backup/restore demonstration, and a Super Admin handover checklist before production. See `docs/TESTING_ACCEPTANCE.md`.
 
-## External references (verify before deployment)
+## AWS candidate references (verify only if AWS is approved)
 - Cognito admin-create-user: https://docs.aws.amazon.com/cognito/latest/developerguide/how-to-create-user-accounts.html
 - AWS Cognito pricing: https://aws.amazon.com/cognito/pricing/
 - AWS AppSync Events pricing: https://aws.amazon.com/appsync/pricing/
 - API Gateway pricing: https://aws.amazon.com/api-gateway/pricing/
-- DynamoDB pricing: https://aws.amazon.com/dynamodb/pricing/
+- Aurora PostgreSQL pricing candidate: https://aws.amazon.com/rds/aurora/pricing/
 - Lambda pricing: https://aws.amazon.com/lambda/pricing/

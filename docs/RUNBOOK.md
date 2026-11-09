@@ -1,19 +1,22 @@
 # Operational runbook (baseline)
 
 ## User onboarding
-Super Admin uses user-management UI to create account with unique username/employee code and role; Cognito issues temporary credential, user changes it at first login. No shared admin passwords. Privileged role grant requires reason and audit.
+In a hosted environment, Super Admin uses user management to create an account with a unique username/employee code and role; the approved identity provider issues the credential and first-login challenge. Local development uses fictional selectable identities and no passwords. No shared admin passwords. Privileged role grants require reason and audit.
 
 ## Admin approval incident
 If unauthorized approval suspected: disable account/revoke sessions; preserve audit; inspect claims approval state and transaction records; do not erase history; correct via explicit reversal workflow (future contract) or documented manual financial reconciliation; rotate affected access.
 
 ## Live events disconnected
-Show browser connection indicator and manual Refresh. Verify AppSync channel auth, event publisher Lambda errors, stream failures and permissions. Core CRUD should still work. After reconnect reload active queries once.
+Show browser connection indicator and manual Refresh. Verify the selected event adapter's channel authorization, outbox publisher errors and permissions. Core CRUD should still work. After reconnect reload active queries once.
 
 ## Data recovery
-Confirm stage, incident scope and point in time; restore DynamoDB PITR into **new** tables, verify integrity, and perform controlled cutover via IaC/config. Restore files via S3 versioning/backup policy; test document references. Never blindly overwrite production without recovery plan.
+Confirm stage, incident scope and point in time; restore PostgreSQL backup/PITR into a **new** database, run integrity checks, and perform controlled cutover through configuration. Restore private files through the selected storage backup/versioning policy and test document references. Never blindly overwrite production.
 
 ## Cost alerts
-Review API Gateway calls, Lambda duration/errors, DynamoDB capacity and hot partitions, S3/CloudFront egress, AppSync connection-minutes, CloudWatch log ingestion. Detect unplanned polling or high fanout.
+Review hosted API calls and compute, PostgreSQL compute/storage/connections, private file storage and egress, event connection-minutes, and log ingestion. Detect unplanned polling, connection leaks or high fanout.
+
+## Local database
+Start with `pnpm db:up`, apply migrations with `pnpm db:migrate`, and verify connectivity with `pnpm db:check`. `pnpm db:down` stops PostgreSQL without deleting its named volume. Volume deletion is destructive and is never part of the normal command.
 
 ## Daily operations
-Review errors, failed stream events, unauthorized access spikes and unprocessed approvals. This is an **operator checklist**, not a scheduled dashboard polling requirement.
+Review errors, failed outbox events, unauthorized access spikes and unprocessed approvals. This is an **operator checklist**, not a scheduled dashboard polling requirement.
