@@ -1,0 +1,84 @@
+:root {
+  --navy-950: #071a33;
+  --navy-900: #0b2347;
+  --navy-800: #12345c;
+  --navy-700: #1b4877;
+  --navy-500: #4071a4;
+  --navy-100: #e8f0f8;
+  --white: #ffffff;
+  --canvas: #f7f9fc;
+  --ink: #141922;
+  --muted: #64748b;
+  --border: #e1e7ef;
+  --success: #207653;
+  --warning: #9c5c0b;
+  --danger: #b42333;
+
+  --font-family-sans: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-size-caption: 0.75rem;
+  --font-size-label: 0.8125rem;
+  --font-size-body: 0.875rem;
+  --font-size-section: 1rem;
+  --font-size-page: 1.5rem;
+  --font-size-metric: 1.75rem;
+  --line-height-caption: 1rem;
+  --line-height-label: 1.25rem;
+  --line-height-body: 1.375rem;
+  --line-height-section: 1.5rem;
+  --line-height-page: 2rem;
+  --line-height-metric: 2rem;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  --motion-fast: 120ms;
+  --motion-standard: 160ms;
+  --motion-ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+.type-page-title {
+  font-size: var(--font-size-page);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-page);
+  letter-spacing: -0.015em;
+}
+
+.type-section-title {
+  font-size: var(--font-size-section);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-section);
+}
+
+.type-body {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-body);
+}
+
+.type-label {
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-label);
+}
+
+.type-caption {
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-caption);
+}
+
+.type-metric {
+  font-size: var(--font-size-metric);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-metric);
+  letter-spacing: -0.02em;
+}
+
+.type-overline {
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-caption);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+

@@ -20,7 +20,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 export function Button({ className = "", type = "button", variant = "primary", ...props }: ButtonProps) {
   return (
     <button
-      className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${buttonStyles[variant]} ${className}`}
+      className={`interactive-control type-body inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-3.5 py-2 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${buttonStyles[variant]} ${className}`}
       type={type}
       {...props}
     />
@@ -29,7 +29,7 @@ export function Button({ className = "", type = "button", variant = "primary", .
 
 export function Card({ children, className = "" }: PropsWithChildren<{ className?: string }>) {
   return (
-    <section className={`rounded-xl border border-[var(--border)] bg-white ${className}`}>{children}</section>
+    <section className={`ui-card rounded-xl border border-[var(--border)] bg-white ${className}`}>{children}</section>
   );
 }
 
@@ -45,8 +45,8 @@ export function CardHeader({
   return (
     <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--border)] px-5 py-4">
       <div>
-        <h2 className="text-base font-semibold text-[var(--navy-900)]">{title}</h2>
-        {description ? <p className="mt-1 text-sm text-[var(--muted)]">{description}</p> : null}
+        <h2 className="type-section-title text-[var(--navy-900)]">{title}</h2>
+        {description ? <p className="type-body mt-1 text-[var(--muted)]">{description}</p> : null}
       </div>
       {action}
     </div>
@@ -65,7 +65,7 @@ const statusStyles: Record<StatusTone, string> = {
 
 export function StatusBadge({ label, tone = "neutral" }: { label: string; tone?: StatusTone }) {
   return (
-    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${statusStyles[tone]}`}>
+    <span className={`type-caption inline-flex rounded-full px-2.5 py-1 font-medium ring-1 ring-inset ${statusStyles[tone]}`}>
       {label.replaceAll("_", " ")}
     </span>
   );
@@ -90,12 +90,12 @@ export function DataTable<T>({
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[720px] border-collapse text-left text-sm">
+      <table className="type-body w-full min-w-[720px] border-collapse text-left">
         <caption className="sr-only">{caption}</caption>
         <thead>
-          <tr className="border-b border-[var(--border)] bg-[var(--canvas)] text-xs uppercase tracking-wide text-[var(--muted)]">
+          <tr className="type-overline border-b border-[var(--border)] bg-[var(--canvas)] text-[var(--muted)]">
             {columns.map((column) => (
-              <th className="px-4 py-3 font-semibold" key={column.key} scope="col">
+              <th className="px-4 py-3" key={column.key} scope="col">
                 {column.header}
               </th>
             ))}
@@ -120,8 +120,8 @@ export function DataTable<T>({
 export function EmptyState({ description, title }: { description: string; title: string }) {
   return (
     <div className="px-5 py-10 text-center">
-      <p className="font-semibold text-[var(--navy-900)]">{title}</p>
-      <p className="mx-auto mt-1 max-w-md text-sm text-[var(--muted)]">{description}</p>
+      <p className="type-section-title text-[var(--navy-900)]">{title}</p>
+      <p className="type-body mx-auto mt-1 max-w-md text-[var(--muted)]">{description}</p>
     </div>
   );
 }
@@ -139,7 +139,7 @@ export function Pagination({
 }) {
   return (
     <nav aria-label="Table pagination" className="flex items-center justify-between gap-3 border-t border-[var(--border)] px-4 py-3">
-      <p className="text-xs text-[var(--muted)]">Cursor-based results</p>
+      <p className="type-caption text-[var(--muted)]">Cursor-based results</p>
       <div className="flex gap-2">
         <Button disabled={!canPrevious} onClick={onPrevious} variant="secondary">Previous</Button>
         <Button disabled={!canNext} onClick={onNext} variant="secondary">Next</Button>
@@ -152,7 +152,7 @@ export function IconButton({ label, children, ...props }: PropsWithChildren<Butt
   return (
     <button
       aria-label={label}
-      className="inline-flex size-10 items-center justify-center rounded-lg border border-[var(--border)] bg-white text-[var(--navy-900)] transition-colors hover:bg-[var(--navy-100)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--navy-500)]"
+      className="interactive-control inline-flex size-10 items-center justify-center rounded-lg border border-[var(--border)] bg-white text-[var(--navy-900)] hover:bg-[var(--navy-100)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--navy-500)]"
       type="button"
       {...props}
     >

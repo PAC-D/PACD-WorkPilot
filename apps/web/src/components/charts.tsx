@@ -41,7 +41,7 @@ export function WorkTrendChart({ period, project }: { period: "7" | "30"; projec
         </ResponsiveContainer>
       </div>
       <details className="border-t border-[var(--border)] px-5 py-3">
-        <summary className="cursor-pointer text-sm font-semibold text-[var(--navy-700)]">View chart data</summary>
+        <summary className="type-body cursor-pointer font-medium text-[var(--navy-700)]">View chart data</summary>
         <div className="mt-3">
           <DataTable
             caption="Work update chart values"
@@ -87,15 +87,15 @@ export function ProjectMixChart({ project }: { project: string }) {
               ))}
             </Pie>
             <Tooltip />
-            <Legend formatter={(value) => <span className="text-xs text-[var(--ink)]">{value}</span>} iconType="circle" />
+            <Legend formatter={(value) => <span className="type-caption text-[var(--ink)]">{value}</span>} iconType="circle" />
           </PieChart>
         </ResponsiveContainer>
       </div>
       <div className="grid grid-cols-2 gap-px border-t border-[var(--border)] bg-[var(--border)] sm:grid-cols-4">
         {data.map((item) => (
           <div className="bg-white px-3 py-3 text-center" key={item.name}>
-            <p className="text-sm font-semibold text-[var(--navy-900)]">{item.count}</p>
-            <p className="text-xs text-[var(--muted)]">{item.name}</p>
+            <p className="type-body font-medium text-[var(--navy-900)]">{item.count}</p>
+            <p className="type-caption text-[var(--muted)]">{item.name}</p>
           </div>
         ))}
       </div>

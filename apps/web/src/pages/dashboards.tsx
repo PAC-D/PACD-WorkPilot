@@ -26,7 +26,7 @@ const ProjectMixChart = lazy(() =>
 
 export function UserDashboard({ onNavigate, onRefresh, principal }: { onNavigate: (page: string) => void; onRefresh: () => void; principal: Principal }) {
   return (
-    <div className="space-y-6">
+    <div className="dashboard-stack space-y-5">
       <DashboardHeader
         description="Track your assigned work, claims, and requests from one place."
         name={`Welcome back, ${principal.displayName}`}
@@ -36,9 +36,9 @@ export function UserDashboard({ onNavigate, onRefresh, principal }: { onNavigate
       <div className="welcome-texture rounded-xl bg-[linear-gradient(120deg,#071A33,#1B4877)] p-5 text-white sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-medium text-blue-100">Your next step</p>
-            <p className="mt-1 text-lg font-bold">Log today’s work update</p>
-            <p className="mt-1 max-w-xl text-sm text-blue-100/80">Keep your project record current before submitting this month’s claim.</p>
+            <p className="type-body font-medium text-blue-100">Your next step</p>
+            <p className="type-section-title mt-1">Log today’s work update</p>
+            <p className="type-body mt-1 max-w-xl text-blue-100/80">Keep your project record current before submitting this month’s claim.</p>
           </div>
           <Button className="bg-white text-[var(--navy-900)] hover:bg-[var(--navy-100)]" onClick={() => onNavigate("my-work")}>
             <Plus aria-hidden="true" size={17} /> Update work
@@ -58,7 +58,7 @@ export function UserDashboard({ onNavigate, onRefresh, principal }: { onNavigate
 export function AdminDashboard({ onRefresh, principal }: { onRefresh: () => void; principal: Principal }) {
   const [filters, setFilters] = useState<DashboardFilter>({ period: "30", project: "all" });
   return (
-    <div className="space-y-6">
+    <div className="dashboard-stack space-y-5">
       <DashboardHeader
         description={`Authorized view for ${principal.department}. Counts and activity are limited to assigned scope.`}
         name={principal.displayName}
@@ -83,7 +83,7 @@ export function AdminDashboard({ onRefresh, principal }: { onRefresh: () => void
 export function SuperAdminDashboard({ onRefresh, principal }: { onRefresh: () => void; principal: Principal }) {
   const [filters, setFilters] = useState<DashboardFilter>({ period: "30", project: "all" });
   return (
-    <div className="space-y-6">
+    <div className="dashboard-stack space-y-5">
       <DashboardHeader
         description="Organization-wide management view with access, configuration, and audit controls."
         name={principal.displayName}
@@ -127,16 +127,16 @@ function DashboardFilters({ applied, onApply }: { applied: DashboardFilter; onAp
         title="Dashboard filters"
       />
       <div className="flex flex-wrap items-end gap-3 px-5 py-4">
-        <label className="grid gap-1.5 text-xs font-semibold text-[var(--muted)]">
+        <label className="type-label grid gap-1.5 text-[var(--muted)]">
           Period
-          <select className="min-h-10 rounded-lg border border-[var(--border)] bg-white px-3 text-sm text-[var(--ink)]" onChange={(event) => setPeriod(event.target.value as DashboardFilter["period"])} value={period}>
+          <select className="interactive-control type-body min-h-10 rounded-lg border border-[var(--border)] bg-white px-3 text-[var(--ink)]" onChange={(event) => setPeriod(event.target.value as DashboardFilter["period"])} value={period}>
             <option value="7">Last 7 days</option>
             <option value="30">Last 30 days</option>
           </select>
         </label>
-        <label className="grid gap-1.5 text-xs font-semibold text-[var(--muted)]">
+        <label className="type-label grid gap-1.5 text-[var(--muted)]">
           Project
-          <select className="min-h-10 rounded-lg border border-[var(--border)] bg-white px-3 text-sm text-[var(--ink)]" onChange={(event) => setProject(event.target.value)} value={project}>
+          <select className="interactive-control type-body min-h-10 rounded-lg border border-[var(--border)] bg-white px-3 text-[var(--ink)]" onChange={(event) => setProject(event.target.value)} value={project}>
             <option value="all">All authorized projects</option>
             <option value="Community Learning Hubs">Community Learning Hubs</option>
             <option value="Digital Records Rollout">Digital Records Rollout</option>
@@ -160,14 +160,14 @@ function ChartLoading() {
 
 export function ModulePreview({ label, onBack }: { label: string; onBack: () => void }) {
   return (
-    <div className="space-y-6">
+    <div className="dashboard-stack space-y-5">
       <div>
-        <p className="text-sm font-medium text-[var(--muted)]">Frontend foundation</p>
-        <h1 className="mt-1 text-2xl font-bold text-[var(--navy-950)]">{label}</h1>
+        <p className="type-body font-medium text-[var(--muted)]">Frontend foundation</p>
+        <h1 className="type-page-title mt-1 text-[var(--navy-950)]">{label}</h1>
       </div>
       <Card className="paper-texture p-8 text-center">
-        <p className="text-lg font-bold text-[var(--navy-900)]">Module shell ready</p>
-        <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[var(--muted)]">This pass establishes the three role dashboards. The detailed module workflow will reuse the shared tables, filters, forms, pagination, and permission controls as backend contracts are implemented.</p>
+        <p className="type-section-title text-[var(--navy-900)]">Module shell ready</p>
+        <p className="type-body mx-auto mt-2 max-w-lg text-[var(--muted)]">This pass establishes the three role dashboards. The detailed module workflow will reuse the shared tables, filters, forms, pagination, and permission controls as backend contracts are implemented.</p>
         <Button className="mt-5" onClick={onBack} variant="secondary">Return to overview</Button>
       </Card>
     </div>

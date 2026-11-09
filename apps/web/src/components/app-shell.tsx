@@ -6,7 +6,6 @@ import {
   BriefcaseBusiness,
   ChevronDown,
   ClipboardList,
-  FileCheck2,
   FolderKanban,
   Gauge,
   Menu,
@@ -54,20 +53,16 @@ export function AppShell({
 
   const sidebar = (
     <>
-      <div className="flex h-17 items-center gap-3 border-b border-white/10 px-4">
-        <div className="grid size-9 place-items-center rounded-lg bg-white text-sm font-black text-[var(--navy-950)]">WP</div>
-        <div>
-          <p className="font-bold tracking-tight text-white">PACD WorkPilot</p>
-          <p className="text-xs text-blue-100/70">Employee operations</p>
-        </div>
+      <div className="flex h-17 items-center border-b border-white/10 px-4 pr-14 lg:pr-4">
+        <img alt="PACD" className="brand-logo h-auto w-36 max-w-full" src="/logo_left.png" />
       </div>
       <nav aria-label="Main navigation" className="flex-1 overflow-y-auto px-3 py-4">
-        <p className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-blue-100/55">Workspace</p>
+        <p className="type-overline px-2 pb-2 text-blue-100/55">Workspace</p>
         <ul className="space-y-1">
           {navigation.map((item) => (
             <li key={item.id}>
               <button
-                className={`flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${activePage === item.id ? "bg-white/13 text-white" : "text-blue-50/75 hover:bg-white/8 hover:text-white"}`}
+                className={`interactive-control type-body flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-left font-medium ${activePage === item.id ? "bg-white/13 text-white" : "text-blue-50/75 hover:bg-white/8 hover:text-white"}`}
                 onClick={() => {
                   onNavigate(item.id);
                   setMobileOpen(false);
@@ -83,11 +78,11 @@ export function AppShell({
       </nav>
       <div className="border-t border-white/10 p-3">
         <div className="rounded-lg bg-white/7 p-3">
-          <div className="flex items-center gap-2 text-xs font-semibold text-white">
+          <div className="type-caption flex items-center gap-2 font-medium text-white">
             <span className="size-2 rounded-full bg-emerald-400" />
             Live updates connected
           </div>
-          <p className="mt-1.5 text-[11px] leading-4 text-blue-100/60">Demo state. No timed fetching.</p>
+          <p className="type-caption mt-1.5 text-blue-100/60">Demo state. No timed fetching.</p>
         </div>
       </div>
     </>
@@ -109,22 +104,22 @@ export function AppShell({
       ) : null}
 
       <div className="lg:pl-56">
-        <header className="sticky top-0 z-20 flex h-17 items-center justify-between border-b border-[var(--border)] bg-white/95 px-4 backdrop-blur sm:px-6">
+        <header className="sticky top-0 z-20 flex h-17 items-center justify-between border-b border-[var(--border)] bg-white/95 px-4 backdrop-blur sm:px-5">
           <div className="flex items-center gap-3">
             <IconButton className="lg:hidden" label="Open navigation" onClick={() => setMobileOpen(true)}>
               <Menu aria-hidden="true" size={19} />
             </IconButton>
             <div className="hidden items-center gap-2 sm:flex">
               <StatusBadge label="Demo data" tone="info" />
-              <span className="text-xs text-[var(--muted)]">Frontend preview</span>
+              <span className="type-caption text-[var(--muted)]">Frontend preview</span>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <label className="hidden text-xs font-semibold text-[var(--muted)] md:block" htmlFor="demo-role">Preview role</label>
+            <label className="type-label hidden text-[var(--muted)] md:block" htmlFor="demo-role">Preview role</label>
             <div className="relative">
               <select
-                className="min-h-10 appearance-none rounded-lg border border-[var(--border)] bg-white py-2 pl-3 pr-9 text-sm font-semibold text-[var(--navy-900)] focus:outline-none focus:ring-2 focus:ring-[var(--navy-500)]"
+                className="interactive-control type-body min-h-10 appearance-none rounded-lg border border-[var(--border)] bg-white py-2 pl-3 pr-9 text-[var(--navy-900)] focus:outline-none focus:ring-2 focus:ring-[var(--navy-500)]"
                 id="demo-role"
                 onChange={(event) => onRoleChange(event.target.value as Role)}
                 value={principal.role}
@@ -135,12 +130,12 @@ export function AppShell({
               </select>
               <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted)]" size={16} />
             </div>
-            <div className="hidden size-9 place-items-center rounded-full bg-[var(--navy-100)] text-xs font-bold text-[var(--navy-900)] sm:grid">
+            <div className="type-label hidden size-9 place-items-center rounded-full bg-[var(--navy-100)] font-medium text-[var(--navy-900)] sm:grid">
               {principal.displayName.split(" ").map((part) => part[0]).join("").slice(0, 2)}
             </div>
           </div>
         </header>
-        <main className="mx-auto max-w-[1500px] p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="px-3 py-5 sm:px-4 lg:px-5 lg:py-6">{children}</main>
       </div>
     </div>
   );

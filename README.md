@@ -53,6 +53,8 @@ Install the Node.js version pinned in `.node-version` and pnpm version declared 
 
 The current frontend uses fictional, typed fixtures and a development-only role selector for USER, ADMIN, and SUPER_ADMIN previews. It is not connected to Cognito, the HTTP API, DynamoDB, S3, or AppSync Events. See [frontend to backend handoff](docs/FRONTEND_BACKEND_HANDOFF.md) before replacing fixtures.
 
+Shared color, typography, and motion tokens live in `packages/ui/src/tokens.css`. Repository branding is sourced from `assets/logo_left.png` and `assets/favicon.png`; Vite serves that directory directly in development and copies the assets into production builds.
+
 ## Repository design
 ```text
 apps/web/                  React SPA and typed demo dashboards

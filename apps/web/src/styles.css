@@ -1,22 +1,9 @@
+@import "@pacd/ui/tokens.css";
 @import "tailwindcss";
 @source "../../../packages/ui/src";
 
 :root {
-  --navy-950: #071a33;
-  --navy-900: #0b2347;
-  --navy-800: #12345c;
-  --navy-700: #1b4877;
-  --navy-500: #4071a4;
-  --navy-100: #e8f0f8;
-  --white: #ffffff;
-  --canvas: #f7f9fc;
-  --ink: #141922;
-  --muted: #64748b;
-  --border: #e1e7ef;
-  --success: #207653;
-  --warning: #9c5c0b;
-  --danger: #b42333;
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--font-family-sans);
   color: var(--ink);
   background: var(--canvas);
   font-synthesis: none;
@@ -36,6 +23,10 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-body);
   background-color: var(--canvas);
   background-image:
     linear-gradient(90deg, rgb(7 26 51 / 0.012) 1px, transparent 1px),
@@ -44,12 +35,64 @@ body {
 }
 
 button,
+input,
 select {
   font: inherit;
 }
 
 button {
   cursor: pointer;
+}
+
+.ui-card {
+  transition:
+    border-color var(--motion-standard) var(--motion-ease),
+    box-shadow var(--motion-standard) var(--motion-ease),
+    transform var(--motion-standard) var(--motion-ease);
+}
+
+.ui-card:hover {
+  border-color: rgb(64 113 164 / 0.32);
+  box-shadow: 0 8px 22px rgb(7 26 51 / 0.045);
+  transform: translateY(-1px);
+}
+
+.brand-logo {
+  filter: drop-shadow(0 2px 5px rgb(0 0 0 / 0.12));
+  animation: brand-reveal var(--motion-standard) var(--motion-ease) both;
+}
+
+.dashboard-stack > * {
+  animation: surface-enter var(--motion-standard) var(--motion-ease) both;
+}
+
+.dashboard-stack > :nth-child(2) {
+  animation-delay: 35ms;
+}
+
+.dashboard-stack > :nth-child(3) {
+  animation-delay: 70ms;
+}
+
+.dashboard-stack > :nth-child(n + 4) {
+  animation-delay: 105ms;
+}
+
+.interactive-control {
+  transition:
+    border-color var(--motion-fast) var(--motion-ease),
+    background-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-ease);
+}
+
+.interactive-control:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.recharts-wrapper text {
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-caption);
 }
 
 .paper-texture {
@@ -80,6 +123,28 @@ button {
 ::selection {
   color: var(--white);
   background: var(--navy-700);
+}
+
+@keyframes surface-enter {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes brand-reveal {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

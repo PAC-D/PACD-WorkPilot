@@ -27,9 +27,9 @@ export function DashboardHeader({
   return (
     <div className="flex flex-wrap items-end justify-between gap-4">
       <div>
-        <p className="text-sm font-medium text-[var(--muted)]">{name}</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-[var(--navy-950)]">{title}</h1>
-        <p className="mt-1 max-w-2xl text-sm text-[var(--muted)]">{description}</p>
+        <p className="type-body font-medium text-[var(--muted)]">{name}</p>
+        <h1 className="type-page-title mt-1 text-[var(--navy-950)]">{title}</h1>
+        <p className="type-body mt-1 max-w-2xl text-[var(--muted)]">{description}</p>
       </div>
       <Button onClick={onRefresh} variant="secondary">
         Refresh data
@@ -44,9 +44,9 @@ export function StatGrid({ stats }: { stats: ReadonlyArray<StatItem> }) {
       {stats.map((stat) => (
         <Card className="relative overflow-hidden p-4" key={stat.label}>
           <div className={`absolute inset-y-0 left-0 w-1 ${stat.tone === "danger" ? "bg-[var(--danger)]" : stat.tone === "warning" ? "bg-[var(--warning)]" : stat.tone === "success" ? "bg-[var(--success)]" : "bg-[var(--navy-500)]"}`} />
-          <p className="text-sm font-medium text-[var(--muted)]">{stat.label}</p>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-[var(--navy-950)]">{stat.value}</p>
-          <p className="mt-1 text-xs text-[var(--muted)]">{stat.detail}</p>
+          <p className="type-body text-[var(--muted)]">{stat.label}</p>
+          <p className="type-metric mt-2 text-[var(--navy-950)]">{stat.value}</p>
+          <p className="type-caption mt-1 text-[var(--muted)]">{stat.detail}</p>
         </Card>
       ))}
     </div>
@@ -54,7 +54,7 @@ export function StatGrid({ stats }: { stats: ReadonlyArray<StatItem> }) {
 }
 
 const timelineColumns = [
-  { header: "Project", key: "project", render: (row: ProjectTimelineRow) => <span className="font-semibold text-[var(--navy-900)]">{row.project}</span> },
+  { header: "Project", key: "project", render: (row: ProjectTimelineRow) => <span className="font-medium text-[var(--navy-900)]">{row.project}</span> },
   { header: "Assigned", key: "assignedAt", render: (row: ProjectTimelineRow) => row.assignedAt },
   { header: "Start", key: "startDate", render: (row: ProjectTimelineRow) => row.startDate },
   { header: "Planned end", key: "plannedEndDate", render: (row: ProjectTimelineRow) => row.plannedEndDate ?? "Not set" },
@@ -76,7 +76,7 @@ export function ProjectTimeline({ project = "all" }: { project?: string }) {
 }
 
 const activityColumns = [
-  { header: "Update", key: "title", render: (row: ActivityRow) => <div><p className="font-semibold text-[var(--navy-900)]">{row.title}</p><p className="mt-0.5 text-xs text-[var(--muted)]">{row.project}</p></div> },
+  { header: "Update", key: "title", render: (row: ActivityRow) => <div><p className="font-medium text-[var(--navy-900)]">{row.title}</p><p className="type-caption mt-0.5 text-[var(--muted)]">{row.project}</p></div> },
   { header: "Employee", key: "owner", render: (row: ActivityRow) => row.owner },
   { header: "Date", key: "date", render: (row: ActivityRow) => row.date },
   { header: "Status", key: "status", render: (row: ActivityRow) => <StatusBadge label={row.status} tone={statusTone(row.status)} /> },
@@ -93,7 +93,7 @@ export function RecentActivity({ personal = false }: { personal?: boolean }) {
 }
 
 const reviewColumns = [
-  { header: "Item", key: "title", render: (row: ReviewRow) => <div><p className="font-semibold text-[var(--navy-900)]">{row.title}</p><p className="mt-0.5 text-xs text-[var(--muted)]">{row.kind}</p></div> },
+  { header: "Item", key: "title", render: (row: ReviewRow) => <div><p className="font-medium text-[var(--navy-900)]">{row.title}</p><p className="type-caption mt-0.5 text-[var(--muted)]">{row.kind}</p></div> },
   { header: "Employee", key: "beneficiary", render: (row: ReviewRow) => row.beneficiary },
   { header: "Submitted", key: "submitted", render: (row: ReviewRow) => row.submitted },
   { header: "Status", key: "status", render: (row: ReviewRow) => <StatusBadge label={row.status} tone={statusTone(row.status)} /> },
@@ -126,11 +126,11 @@ function SummaryCard({ detail, icon, label, value }: { detail: string; icon: Rea
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-medium text-[var(--muted)]">{label}</p>
+        <p className="type-body text-[var(--muted)]">{label}</p>
         <span className="text-[var(--navy-500)]">{icon}</span>
       </div>
-      <p className="mt-3 text-2xl font-bold text-[var(--navy-950)]">{value}</p>
-      <p className="mt-1 text-xs text-[var(--muted)]">{detail}</p>
+      <p className="type-metric mt-3 text-[var(--navy-950)]">{value}</p>
+      <p className="type-caption mt-1 text-[var(--muted)]">{detail}</p>
     </Card>
   );
 }
@@ -144,8 +144,8 @@ export function UserProjects({ onView }: { onView: () => void }) {
           <div className="p-5" key={project.name}>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="font-semibold text-[var(--navy-900)]">{project.name}</p>
-                <p className="mt-1 flex items-center gap-1.5 text-xs text-[var(--muted)]"><CalendarDays aria-hidden="true" size={14} /> Planned end {project.due}</p>
+                <p className="type-body font-medium text-[var(--navy-900)]">{project.name}</p>
+                <p className="type-caption mt-1 flex items-center gap-1.5 text-[var(--muted)]"><CalendarDays aria-hidden="true" size={14} /> Planned end {project.due}</p>
               </div>
               <StatusBadge label={project.status} tone="info" />
             </div>
@@ -153,7 +153,7 @@ export function UserProjects({ onView }: { onView: () => void }) {
               <div aria-label={`${project.progress}% progress`} aria-valuemax={100} aria-valuemin={0} aria-valuenow={project.progress} className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--navy-100)]" role="progressbar">
                 <div className="h-full rounded-full bg-[var(--navy-700)]" style={{ width: `${project.progress}%` }} />
               </div>
-              <span className="text-xs font-semibold text-[var(--navy-900)]">{project.progress}%</span>
+              <span className="type-caption font-medium text-[var(--navy-900)]">{project.progress}%</span>
             </div>
           </div>
         ))}
@@ -170,8 +170,8 @@ export function ActionList() {
         {userActions.map((action) => (
           <div className="flex items-start justify-between gap-3 p-4" key={action.label}>
             <div>
-              <p className="text-sm font-semibold text-[var(--navy-900)]">{action.label}</p>
-              <p className="mt-1 text-xs text-[var(--muted)]">{action.detail}</p>
+              <p className="type-body font-medium text-[var(--navy-900)]">{action.label}</p>
+              <p className="type-caption mt-1 text-[var(--muted)]">{action.detail}</p>
             </div>
             <StatusBadge label={action.status} tone={statusTone(action.status)} />
           </div>
@@ -186,15 +186,15 @@ export function OrganizationOverview() {
     <Card className="paper-texture overflow-hidden">
       <div className="grid gap-6 p-5 md:grid-cols-[1.4fr_1fr] md:p-6">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--navy-500)]">Organization overview</p>
-          <h2 className="mt-2 text-xl font-bold text-[var(--navy-950)]">Access and policy controls are up to date</h2>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--muted)]">Thirty active accounts are within the approved v1 limit. Self-approval remains locked for every role.</p>
+          <p className="type-overline text-[var(--navy-500)]">Organization overview</p>
+          <h2 className="type-section-title mt-2 text-[var(--navy-950)]">Access and policy controls are up to date</h2>
+          <p className="type-body mt-2 max-w-xl text-[var(--muted)]">Thirty active accounts are within the approved v1 limit. Self-approval remains locked for every role.</p>
         </div>
         <dl className="grid grid-cols-2 gap-3">
-          <div className="rounded-lg border border-[var(--border)] bg-white/90 p-3"><dt className="text-xs text-[var(--muted)]">Active accounts</dt><dd className="mt-1 text-xl font-bold text-[var(--navy-950)]">30</dd></div>
-          <div className="rounded-lg border border-[var(--border)] bg-white/90 p-3"><dt className="text-xs text-[var(--muted)]">Policy version</dt><dd className="mt-1 text-xl font-bold text-[var(--navy-950)]">12</dd></div>
-          <div className="rounded-lg border border-[var(--border)] bg-white/90 p-3"><dt className="text-xs text-[var(--muted)]">Departments</dt><dd className="mt-1 text-xl font-bold text-[var(--navy-950)]">4</dd></div>
-          <div className="rounded-lg border border-[var(--border)] bg-white/90 p-3"><dt className="text-xs text-[var(--muted)]">Privileged users</dt><dd className="mt-1 text-xl font-bold text-[var(--navy-950)]">3</dd></div>
+          <div className="rounded-lg border border-[var(--border)] bg-white/90 p-3"><dt className="type-caption text-[var(--muted)]">Active accounts</dt><dd className="type-section-title mt-1 text-[var(--navy-950)]">30</dd></div>
+          <div className="rounded-lg border border-[var(--border)] bg-white/90 p-3"><dt className="type-caption text-[var(--muted)]">Policy version</dt><dd className="type-section-title mt-1 text-[var(--navy-950)]">12</dd></div>
+          <div className="rounded-lg border border-[var(--border)] bg-white/90 p-3"><dt className="type-caption text-[var(--muted)]">Departments</dt><dd className="type-section-title mt-1 text-[var(--navy-950)]">4</dd></div>
+          <div className="rounded-lg border border-[var(--border)] bg-white/90 p-3"><dt className="type-caption text-[var(--muted)]">Privileged users</dt><dd className="type-section-title mt-1 text-[var(--navy-950)]">3</dd></div>
         </dl>
       </div>
     </Card>

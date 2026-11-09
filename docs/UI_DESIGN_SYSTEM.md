@@ -26,6 +26,12 @@ Gradient allowed sparingly: `linear-gradient(120deg,#071A33,#1B4877)` on sign-in
 ## Sizing and typography
 Font: Inter, with system-ui fallback (self-host only if licensed/required; otherwise system-ui). Base 14px with readable line-height; main headings 20–24px, section headings 16–18px, labels 13–14px. Spacing 4/8px system. Radius 8–12px. Sidebar width 224px; compact icon-only collapse optional. Control height >=40px, mobile >=44px target. Minimal motion 120–180ms and respect `prefers-reduced-motion`.
 
+The implementation source of truth is `packages/ui/src/tokens.css`. Components use the shared `type-page-title`, `type-section-title`, `type-body`, `type-label`, `type-caption`, `type-metric`, and `type-overline` classes rather than defining module-specific font sizes or weights. The current scale is 12px caption, 13px label, 14px body, 16px section title, 24px page title, and 28px metric. Regular text uses weight 400, interactive labels use 500, and headings use at most 600.
+
+Brand assets are served from the repository `assets/` directory. Use `logo_left.png` for the primary sidebar mark and `favicon.png` for the browser tab icon. Do not recreate or recolor these assets in module code.
+
+Motion tokens are also centralized in `packages/ui/src/tokens.css`. Use only short 120–160ms interface transitions and small entrance or hover offsets. All motion must be disabled or reduced by the global `prefers-reduced-motion` rule.
+
 ## Shared UI contracts
 `AppShell`, `Sidebar`, `PageHeader`, `DataTable`, `Pagination`, `FilterBar`, `SearchField`, `MonthPicker`, `DatePicker`, `FileUpload`, `FormField`, `FormRenderer`, `ConfirmDialog`, `Toast`, `StatusBadge`, `ChartCard`, `EmptyState`, `Skeleton`, `PermissionGate`. Import from `packages/ui` or approved shared directory, never rewrite local clones. `PermissionGate` is visual only; backend remains authoritative.
 
