@@ -1,6 +1,7 @@
 import type { PoolConfig } from "pg";
 
 export interface RuntimeConfig {
+  cursorSecret: string;
   database: PoolConfig;
   localAuthEnabled: boolean;
   nodeEnvironment: "development" | "test" | "production";
@@ -34,6 +35,8 @@ export function readRuntimeConfig(environment: NodeJS.ProcessEnv = process.env):
   if (localAuthEnabled && nodeEnvironment === "production") {
     throw new Error("LOCAL_AUTH_ENABLED cannot be used in production");
   }
+  const cursorSecret = environment.CURSOR_SECRET?.trim();
+  if (!cursorSecret && nodeEnvironment === "production") throw new Error("CURSOR_SECRET is required in production");
 
   const connectionString = environment.DATABASE_URL?.trim();
   const database: PoolConfig = connectionString
@@ -47,6 +50,7 @@ export function readRuntimeConfig(environment: NodeJS.ProcessEnv = process.env):
       };
 
   return {
+    cursorSecret: cursorSecret || `local-${crypto.randomUUID()}`,
     database: {
       ...database,
       allowExitOnIdle: false,
