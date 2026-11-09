@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, PropsWithChildren, ReactNode } from "react";
+import type { ButtonHTMLAttributes, InputHTMLAttributes, PropsWithChildren, ReactNode } from "react";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 
@@ -159,5 +159,33 @@ export function IconButton({ label, children, ...props }: PropsWithChildren<Butt
       {children}
     </button>
   );
+}
+
+interface CalendarInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
+  label: string;
+}
+
+function CalendarInput({ className = "", id, label, ...props }: CalendarInputProps & { type: "date" | "month" }) {
+  const inputId = id ?? props.name;
+  if (!inputId) throw new Error("DatePicker and MonthPicker require an id or name");
+
+  return (
+    <label className="block" htmlFor={inputId}>
+      <span className="type-label block text-[var(--navy-900)]">{label}</span>
+      <input
+        className={`interactive-control type-body mt-2 min-h-10 w-full rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--navy-500)] ${className}`}
+        id={inputId}
+        {...props}
+      />
+    </label>
+  );
+}
+
+export function DatePicker(props: CalendarInputProps) {
+  return <CalendarInput {...props} type="date" />;
+}
+
+export function MonthPicker(props: CalendarInputProps) {
+  return <CalendarInput {...props} type="month" />;
 }
 
