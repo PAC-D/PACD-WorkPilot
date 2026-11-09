@@ -1,0 +1,16 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://example.invalid/contracts/entity-changed-v1",
+  "title":"EntityChangedV1",
+  "type":"object",
+  "additionalProperties":false,
+  "required":["eventId","type","entityId","scope","version","occurredAt"],
+  "properties":{
+    "eventId":{"type":"string","minLength":1},
+    "type":{"enum":["CLAIM_CHANGED","REQUEST_CHANGED","ACTIVITY_CHANGED","PROJECT_CHANGED","USER_GRANTS_CHANGED","CONFIG_CHANGED"]},
+    "entityId":{"type":"string","minLength":1},
+    "scope":{"type":"string","minLength":1},
+    "version":{"type":"integer","minimum":1},
+    "occurredAt":{"type":"string","format":"date-time"}
+  }
+}
