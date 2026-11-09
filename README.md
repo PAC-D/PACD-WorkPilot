@@ -23,7 +23,7 @@ A small internal application for **at most 30 active employee accounts**. It sup
 | Backend | Node.js TypeScript, Hono HTTP API; local Node runtime, hosted adapter later |
 | API entry | Local Hono server; hosted gateway selected during deployment |
 | Database | Portable PostgreSQL 16+, local through Docker Compose |
-| Login | Development-only fictional identity adapter locally; hosted provider selected before deployment |
+| Login | Development-only database-backed identity selector locally; Cognito-compatible adapter later |
 | File storage | Local private adapter for development; hosted private object storage selected before deployment |
 | Live invalidation | Provider adapter: event hint only, then targeted TanStack Query invalidation |
 | Event publication | PostgreSQL transactional outbox -> hosted publisher adapter |
@@ -62,17 +62,17 @@ pnpm db:check
 pnpm dev
 ```
 
-Open `http://127.0.0.1:5173`. The API listens at `http://127.0.0.1:3000`. `pnpm db:seed` creates only fictional local identities and stores no passwords. A local API request selects one explicitly with `X-WorkPilot-Local-User: local-user`; this adapter and its directory route are absent unless `LOCAL_AUTH_ENABLED=true`, and configuration rejects that setting in production. `pnpm dev` runs both processes; `pnpm dev:web` and `pnpm dev:api` run them separately. Stop PostgreSQL with `pnpm db:down`; the named Docker volume preserves local data.
+Open `http://127.0.0.1:5173`. The API listens at `http://127.0.0.1:3000`. `pnpm db:seed` creates only the fictional `Local Super Admin` profile and stores no password. The local login screen selects an active fictional identity through the development adapter; this route is absent unless `LOCAL_AUTH_ENABLED=true`, and configuration rejects that setting in production. The Super Admin can create additional local profiles from **Users & Access**, after which they become selectable local identities. `pnpm dev` runs both processes; `pnpm dev:web` and `pnpm dev:api` run them separately. Stop PostgreSQL with `pnpm db:down`; the named Docker volume preserves local data.
 
 Use `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:integration`, and `pnpm build` before submitting changes. Never commit `.env`; `.env.example` contains placeholders only.
 
-The current frontend has a production-oriented login screen with an unconfigured authentication adapter. Development builds expose fictional typed dashboards through an explicit preview control and role selector. PostgreSQL and the local API now run independently, but the frontend fixtures are not connected to them yet. See [frontend to backend handoff](docs/FRONTEND_BACKEND_HANDOFF.md).
+The local frontend is connected to the Hono API and PostgreSQL for identity profiles, dashboard aggregates, users, departments, projects, assignments, work activities, claims, requests and audit records. All writes use the API; the browser never connects to PostgreSQL. Password login, recovery, credential changes, private file content and hosted event delivery remain adapter work for a later hosted deployment. See [frontend to backend handoff](docs/FRONTEND_BACKEND_HANDOFF.md).
 
 Shared color, typography, and motion tokens live in `packages/ui/src/tokens.css`. Repository branding is sourced from `assets/logo_left.png` and `assets/favicon.png`; Vite serves that directory directly in development and copies the assets into production builds.
 
 ## Repository design
 ```text
-apps/web/                  React SPA and typed demo dashboards
+apps/web/                  React SPA connected to the local API
 apps/api/                  Hono API, PostgreSQL migrations and domain services
 packages/contracts/        Zod schemas and typed API/event contracts
 packages/ui/               Shared UI/design tokens/components

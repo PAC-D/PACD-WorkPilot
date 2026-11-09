@@ -1,44 +1,39 @@
 # Frontend to backend integration handoff
 
-**Status:** Frontend foundation uses local typed fixtures behind a development-only login preview. The production login screen and auth boundary exist, but Cognito is not connected. This document lists required replacements for backend development and is not a new API contract.
+**Status:** The local React frontend is connected to the Hono API and PostgreSQL. Local identity uses fictional profiles and no passwords. This document tracks remaining production and hosted-adapter work; it is not a new API contract.
 
-## Current frontend boundary
+## Implemented local boundary
 
-- `apps/web/src/data/demo-data.ts` is the only source of dashboard records and principals.
-- The login preview and role selector are development controls. They do not authenticate or authorize a user and are excluded from production behavior.
-- Dashboard refresh re-runs the local query only. No network API or AppSync connection exists yet.
-- Module routes beyond Overview intentionally show a shared shell until their contracted workflows are implemented.
-- Chart values, people, projects, claims, requests, activities, organization counts, dates, and policy versions are fictional demonstration data.
+- The browser loads the authoritative principal from `/api/v1/me` and derives navigation from returned permissions.
+- PostgreSQL supplies users, departments, projects, memberships, activities, claims, requests, audit records and dashboard aggregates.
+- Lists are bounded and use viewer/policy/resource-bound signed keyset cursors.
+- Create and core submit/review writes include the entity, idempotency result, audit record and outbox event in one transaction.
+- The local login screen selects active fictional profiles through an adapter that configuration rejects in production.
+- Static dashboard fixtures, the role preview selector and module placeholder page have been removed.
+- Passwords and private file bytes are never stored in PostgreSQL.
 
-## Backend replacements
+## Remaining work
 
-| Frontend concern | Current demo behavior | Required backend integration |
+| Concern | Local state | Required before production |
 |---|---|---|
-| Principal and navigation | Role selector loads a typed fixture | Load `/api/v1/me`; derive visible navigation from returned effective permissions and policy version; never trust browser-stored role |
-| Authentication | Login UI and unconfigured auth adapter | Connect Cognito invite-only authentication, first-login password change, recovery, token handling and sign-out cache clear. MFA is deferred under ADR-0003. |
-| Dashboard summary | Local arrays | `/api/v1/dashboard/summary` with authorized aggregates, bounded date range, server validation, and shared query keys |
-| Project timeline | Local table rows | `/api/v1/dashboard/projects`; server-side authorization and opaque cursor pagination |
-| Work, claims, requests | Static rows | Contracted list/detail/mutation endpoints with Zod response validation and standardized error envelopes |
-| Review controls | Permission-gated visual state | Object-level server authorization on every action; enforce scope, transition policy, version, idempotency, and self-approval denial |
-| Pagination | Not active in dashboard fixture | Shared signed keyset cursor pagination using `{limit,nextCursor,hasMore}`; never add offset or total pages |
-| Filtering | Display-only summary | Whitelisted query parameters that map to documented indexes; reset cursor when filters change |
-| Live updates | Static connected indicator | Local event adapter first, hosted authenticated transport later; invalidate affected active TanStack Query keys and never send record data in event payload |
-| Reconciliation | Manual refresh only | One-time active-query reconciliation after reconnect or meaningful focus return; no interval polling |
-| Files | No upload UI in this pass | Presign, direct private S3 upload, finalization, progress, validation, and authorized short-lived download |
-| Mutations | No writes in this pass | `Idempotency-Key`, entity version or `If-Match`, definitive mutation response, targeted cache updates, audit, and post-commit events |
-| Dates and money | Presentation fixtures | UTC timestamps, organization timezone rendering, `YYYY-MM-DD`, `YYYY-MM`, integer BDT minor units |
-| Errors and loading | Not exercised by local data | Shared skeleton, empty, forbidden, conflict, validation, disconnected, and retry states without leaking resource existence |
-| Module routing | In-memory page selection | Production SPA routing and direct-route authorization behavior within the approved React/Vite architecture |
+| Authentication | Fictional local identity selector | Cognito token verification, challenge support, recovery, credential rotation, revocation and production session policy |
+| User provisioning | Local profile and default grants | Provider account provisioning and invitation lifecycle without returning credentials |
+| Domain workflows | Create, list, assignment, submit and core approval paths | Detail/edit screens, remaining needs-info/reject/paid/fulfilled controls and complete transition matrix |
+| Files | Metadata schema only | Private local adapter for development and approved hosted object adapter with validation and scanning policy |
+| Live invalidation | Transactional outbox rows | Local publisher plus approved hosted event transport and channel authorization |
+| Filtering | Core bounded lists | All contracted date, status, employee and project filters bound into signed cursor identity |
+| Tests | Unit security and cursor tests | PostgreSQL integration, API E2E, browser E2E, concurrency, idempotency, event and outage suites |
+| Operations | Local migrations and checks | Hosted backup/restore, retention, monitoring, cost review and deployment ADR |
 
-## Verification required during backend work
+## Verification required
 
-1. Add own/other, scoped/unscoped, read-only Admin, and all-role self-approval denial tests.
-2. Add cursor mismatch/expiry, idempotent retry, optimistic concurrency, audit, event invalidation, and missed-event recovery tests.
-3. Confirm chart totals match accessible table alternatives for the same authorized response.
-4. Trace an idle ten-minute browser session and verify there are no periodic data requests.
-5. Remove the demo role control and fixtures from production builds before authentication UAT.
+1. Run migrations, seed and schema integration tests against PostgreSQL 16 or newer.
+2. Test own/other, scoped/unscoped, read-only Admin and all-role self-approval denial at API level.
+3. Test cursor tampering, mismatch and expiry plus idempotent retry and optimistic concurrency.
+4. Confirm dashboard charts and accessible tables use the same authorized response.
+5. Verify no periodic data requests occur during an idle browser session.
+6. Verify the local identity route is absent and local identity headers are rejected in production configuration.
 
-## Product decisions still open
+## Open product decisions
 
-Backend implementation must not silently settle the remaining decisions in `docs/OPEN_DECISIONS.md`, including AWS region, retention, malware handling, session duration, dashboard period, duplicate-marker release behavior, and dynamic AppSync scope authorization.
-
+Do not silently resolve the remaining decisions in `docs/OPEN_DECISIONS.md`, including hosted provider, retention, malware handling, session duration, duplicate-marker release behavior, project join-request workflow and hosted event authorization.

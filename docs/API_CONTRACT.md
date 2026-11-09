@@ -47,6 +47,8 @@ Base URL `/api/v1`; UTF-8 JSON; provider-issued bearer identity in hosted enviro
 ## Query conventions
 `?limit=20&cursor=<opaque>&status=...&projectId=...&from=2026-11-01&to=2026-11-30`. If filters/sort change, discard cursor. `cursor` signatures bind viewer, query parameters, expiry and policyVersion; return 400/410 on mismatch/expiry. All time ranges bounded.
 
+When the development identity adapter is explicitly enabled, `POST /users` creates only a fictional local profile and default grants. It never accepts, generates, returns or stores a password. The profile becomes selectable from `/development/identities`. Hosted behavior must provision credentials through the approved identity provider while preserving the same application profile contract.
+
 ## Real-time contract
 Not a business API: the selected authorized event adapter publishes `EntityChanged` `{eventId,type,entityId,scope,version,occurredAt}`; no records or secrets. Local development may use an in-process adapter; AppSync Events is only an AWS candidate. See `REALTIME_CACHE.md` and `contracts/event.schema.json`.
 

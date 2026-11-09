@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-11-09 - Local API connection feedback
+- Fixed the local login screen remaining indefinitely on "Loading local identities" when the API is unavailable.
+- Added an actionable API connection error and retry control without adding polling.
+- Made API startup reporting wait for a successful port bind and handle port conflicts without an unhandled error.
+
+## 2026-11-09 - Local database application integration
+- Removed dashboard fixtures, preview-role controls and placeholder module screens from the frontend.
+- Connected local sign-in, navigation, dashboard aggregates, users, departments, projects, assignments, work, claims, requests and audit views to the Hono/PostgreSQL API.
+- Added shared Zod contracts, signed keyset cursors, bounded PostgreSQL queries and database-backed empty states.
+- Added transactional create and core submit/review paths with idempotency records, append-only audit rows and outbox events.
+- Changed the local seed to one fictional Super Admin profile and disabled the two legacy seed identities without deleting their historical records.
+- Preserved the prohibition on hardcoded credentials and custom password storage; hosted password lifecycle remains an identity-adapter responsibility.
+- Added local cursor-secret configuration and updated local-development documentation.
+
 ## 2026-11-09 - Local PostgreSQL runtime foundation
 - Accepted ADR-0004, replacing the DynamoDB-specific baseline with portable PostgreSQL and keeping the hosted provider undecided.
 - Added Docker Compose local PostgreSQL, placeholder-only environment configuration, versioned checksum-verified SQL migrations, and a bounded `pg` connection pool.

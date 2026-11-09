@@ -13,7 +13,7 @@ This setup runs only on your computer. It does not create an AWS resource, publi
    cp .env.example .env
    ```
 
-5. Open `.env` and replace `replace-with-a-random-local-password` with a random password used only on this machine. Never commit `.env`.
+5. Open `.env` and replace both placeholder secrets for `POSTGRES_PASSWORD` and `CURSOR_SECRET` with different random values used only on this machine. Never commit `.env`.
 
 ## Start the system
 
@@ -30,7 +30,7 @@ pnpm dev
 
 Then open `http://127.0.0.1:5173`. The web process and API process remain visible in the terminal. Stop them with `Ctrl+C`. Stop PostgreSQL with `pnpm db:down`; its named volume remains so the next start keeps local data.
 
-The seed contains only `Local User`, `Local Admin`, and `Local Super Admin`. It stores no passwords. The local identity adapter is enabled only by `LOCAL_AUTH_ENABLED=true` and configuration rejects it when `NODE_ENV=production`.
+The seed contains only `Local Super Admin` with username `superadmin` and profile email `superadmin@pacd`. It stores and accepts no password. Additional fictional profiles created from **Users & Access** become selectable local identities. The local identity adapter is enabled only by `LOCAL_AUTH_ENABLED=true` and configuration rejects it when `NODE_ENV=production`.
 
 ## Check the API directly
 
@@ -38,7 +38,7 @@ With `pnpm dev` running, these commands verify the identity boundary:
 
 ```bash
 curl http://127.0.0.1:3000/api/v1/development/identities
-curl -H 'X-WorkPilot-Local-User: local-user' http://127.0.0.1:3000/api/v1/me
+curl -H 'X-WorkPilot-Local-User: local-super-admin' http://127.0.0.1:3000/api/v1/me
 ```
 
 The first route is absent when local identity is disabled. A `/me` request without the header returns `401`.
