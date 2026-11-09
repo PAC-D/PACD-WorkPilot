@@ -5,9 +5,17 @@
   "packageManager": "pnpm@12.18.0",
   "scripts": {
     "build": "pnpm --recursive --if-present build",
-    "dev": "pnpm --filter @pacd/web dev",
+    "db:check": "pnpm --filter @pacd/api db:check",
+    "db:down": "docker compose down",
+    "db:migrate": "pnpm --filter @pacd/api db:migrate",
+    "db:seed": "pnpm --filter @pacd/api db:seed",
+    "db:up": "docker compose up -d --wait postgres",
+    "dev": "pnpm --parallel --filter @pacd/api --filter @pacd/web dev",
+    "dev:api": "pnpm --filter @pacd/api dev",
+    "dev:web": "pnpm --filter @pacd/web dev",
     "lint": "pnpm --recursive --if-present lint",
     "test": "pnpm --recursive --if-present test",
+    "test:integration": "pnpm --filter @pacd/api test:integration",
     "typecheck": "pnpm --recursive --if-present typecheck"
   },
   "devDependencies": {

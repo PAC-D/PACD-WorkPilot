@@ -5,12 +5,22 @@
   "type": "module",
   "scripts": {
     "build": "tsc --noEmit",
+    "db:check": "node --env-file-if-exists=../../.env --experimental-strip-types src/db/check.ts",
+    "db:migrate": "node --env-file-if-exists=../../.env --experimental-strip-types src/db/migrate.ts",
+    "db:seed": "node --env-file-if-exists=../../.env --experimental-strip-types src/db/seed.ts",
+    "dev": "node --env-file-if-exists=../../.env --experimental-strip-types --watch src/server.ts",
     "lint": "tsc --noEmit",
     "test": "node --experimental-strip-types --test src/**/*.test.ts",
+    "test:integration": "node --env-file-if-exists=../../.env --experimental-strip-types --test src/db/schema.integration.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@pacd/contracts": "workspace:*",
-    "hono": "4.11.4"
+    "@hono/node-server": "1.19.9",
+    "hono": "4.11.4",
+    "pg": "8.16.3"
+  },
+  "devDependencies": {
+    "@types/pg": "8.15.5"
   }
 }
