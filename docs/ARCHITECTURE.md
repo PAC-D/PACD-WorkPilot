@@ -3,7 +3,9 @@
 ## Runtime profiles
 Local development: Browser -> Vite SPA -> Hono Node server -> local PostgreSQL. Identity, files and event delivery use explicit development adapters with fictional data only.
 
-Hosted deployment remains provider-configurable: compiled SPA -> CDN/static storage; browser -> Hono HTTP API -> PostgreSQL/private object storage/approved identity provider. The AWS candidate is CloudFront/S3, API Gateway/Lambda, Cognito, private S3, and managed PostgreSQL, but no AWS database or account is selected by ADR-0004.
+Hosted deployment remains provider-configurable: compiled SPA -> CDN/static storage; browser -> Hono HTTP API -> PostgreSQL/private object storage/approved identity provider. AWS staging uses `eu-north-1`, Cognito identity and private S3 files under ADR-0005. CloudFront/S3, API Gateway/Lambda and managed PostgreSQL remain infrastructure candidates; the final runtime and hosted PostgreSQL topology still require the deployment ADR required by ADR-0004.
+
+The SPA owns canonical browser routes and uses the History API without a routing dependency. Static hosting must return `index.html` for application document routes while continuing to serve real assets and API requests normally. Route visibility is derived from the authenticated principal, but server authorization remains authoritative.
 
 ## Rationale
 The entity count is small, but domain permissions and relationships are non-trivial. PostgreSQL constraints and transactions make memberships, approvals, audit, reporting and idempotency easier to reason about. Keep one Hono modular monolith with internal domain modules. A Node process is the local runtime; hosted adapters may use Lambda or a small VPS without changing services. No microservices.
@@ -41,6 +43,7 @@ At 30 employees, bounded indexed aggregate queries over fixed date ranges are ac
 
 ## Architectural rules
 - Frontend never trusts role stored in local storage; server always authorizes.
+- Cognito temporary-password authentication is represented as an opaque `NEW_PASSWORD_REQUIRED` challenge. The browser submits the replacement password only to the identity-provider adapter; PACD WorkPilot APIs and PostgreSQL never receive or store it.
 - `updatedAt`, version and event sequence support cache reconciliation. Events are notifications, not primary state.
 - Event delivery is best effort; browser visibility/reconnect manual refresh are fallback.
 - Browser should fetch dashboard **once on open**, and when a relevant mutation/event/focus/reconnect occurs. No time-based refetch.

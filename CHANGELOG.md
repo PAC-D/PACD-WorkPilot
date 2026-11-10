@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-11-10 - Canonical routes and hosted authentication challenge contract
+- Replaced in-memory page selection with canonical History API routes for dashboard, work, people, projects, claims, requests, reports, administration, settings, audit and profile.
+- Added permission-aware direct-route resolution, browser Back/Forward support, accessible anchors, and explicit 403/404 states without adding a routing dependency.
+- Added shared Zod contracts for Cognito-style `NEW_PASSWORD_REQUIRED` outcomes and matching first-login replacement passwords without storing credentials.
+- Recorded `eu-north-1`, Cognito email invitations, 7-day temporary credentials, and the approved 12-character mixed-complexity password policy.
+- Documented the hosted SPA fallback requirement and temporary-password security boundary.
+- No API endpoint, database migration, AWS resource or hosted credential was added.
+
+## 2026-11-10 - AWS staging application adapters
+- Accepted ADR-0005 for configurable Cognito and private S3 application adapters in `eu-north-1` without provisioning AWS resources.
+- Added modular Amplify sign-in, forced first-password replacement, sign-out and bearer-token attachment while preserving local fictional identity mode.
+- Added API-side Cognito access-token verification followed by authoritative PostgreSQL profile and grant loading.
+- Added Cognito administrator provisioning with email invitations, immutable subject binding and compensating cleanup on database failure.
+- Added private claim attachment presigning, direct S3 upload, exact metadata finalization, audited metadata and short-lived authorized downloads.
+- Added the shared file uploader, hosted configuration validation, tests and deployment documentation; no AWS resource or credential was created.
+
 ## 2026-11-09 - Local API connection feedback
 - Fixed the local login screen remaining indefinitely on "Loading local identities" when the API is unavailable.
 - Added an actionable API connection error and retry control without adding polling.

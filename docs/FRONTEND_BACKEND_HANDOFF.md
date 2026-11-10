@@ -1,6 +1,6 @@
 # Frontend to backend integration handoff
 
-**Status:** The local React frontend is connected to the Hono API and PostgreSQL. Local identity uses fictional profiles and no passwords. This document tracks remaining production and hosted-adapter work; it is not a new API contract.
+**Status:** The local React frontend is connected to the Hono API and PostgreSQL. Local identity uses fictional profiles and no passwords. Hosted Cognito sign-in, forced password replacement, JWT verification, invitation provisioning and private S3 claim uploads are implemented behind configuration, but AWS resources are not provisioned. This document tracks remaining production and hosted-adapter work; it is not a new API contract.
 
 ## Implemented local boundary
 
@@ -9,6 +9,7 @@
 - Lists are bounded and use viewer/policy/resource-bound signed keyset cursors.
 - Create and core submit/review writes include the entity, idempotency result, audit record and outbox event in one transaction.
 - The local login screen selects active fictional profiles through an adapter that configuration rejects in production.
+- Canonical paths resolve through permission-aware client routing; direct inaccessible paths show 403 and unknown paths show 404.
 - Static dashboard fixtures, the role preview selector and module placeholder page have been removed.
 - Passwords and private file bytes are never stored in PostgreSQL.
 
@@ -16,10 +17,10 @@
 
 | Concern | Local state | Required before production |
 |---|---|---|
-| Authentication | Fictional local identity selector | Cognito token verification, challenge support, recovery, credential rotation, revocation and production session policy |
-| User provisioning | Local profile and default grants | Provider account provisioning and invitation lifecycle without returning credentials |
+| Authentication | Local selector plus hosted Cognito sign-in, `NEW_PASSWORD_REQUIRED`, bearer token and API verification | Recovery UI, revocation operations and final production session policy |
+| User provisioning | Local profile or hosted Cognito email invitation plus PostgreSQL grants | Disable/reset/revoke screens and production email sender validation |
 | Domain workflows | Create, list, assignment, submit and core approval paths | Detail/edit screens, remaining needs-info/reject/paid/fulfilled controls and complete transition matrix |
-| Files | Metadata schema only | Private local adapter for development and approved hosted object adapter with validation and scanning policy |
+| Files | Hosted private S3 claim upload/finalize/download adapter | Malware scanning/quarantine policy and remaining activity/request attachment surfaces |
 | Live invalidation | Transactional outbox rows | Local publisher plus approved hosted event transport and channel authorization |
 | Filtering | Core bounded lists | All contracted date, status, employee and project filters bound into signed cursor identity |
 | Tests | Unit security and cursor tests | PostgreSQL integration, API E2E, browser E2E, concurrency, idempotency, event and outage suites |

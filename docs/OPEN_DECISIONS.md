@@ -4,7 +4,7 @@ All changes require product-owner decision and, when technical choices change, a
 
 | Decision | Working default | Owner acceptance required |
 |---|---|---|
-| AWS region | TBD, example `us-east-1` not final | Yes |
+| AWS staging region | `eu-north-1` (Europe/Stockholm) | Resolved 2026-11-10 |
 | Hosted runtime/provider | Local-first accepted; AWS-managed services versus VPS remains TBD | Yes before deployment |
 | Hosted PostgreSQL | Portable PostgreSQL accepted; Aurora/RDS versus VPS remains TBD | Yes before deployment |
 | Organization timezone | `Asia/Dhaka` | Confirm |
@@ -19,8 +19,9 @@ All changes require product-owner decision and, when technical choices change, a
 | File allowed MIME/size | PDF/DOCX/JPG/PNG, 5 MB (5,000,000 bytes) per file | Resolved 2026-11-09 |
 | Receipt malware handling | Quarantine + validation; scanning design TBD | Yes |
 | Session duration | Hosted identity-provider security policy TBD | Yes |
+| Cognito password policy | Minimum 12 characters with uppercase, lowercase, number and special character; administrator temporary password valid 7 days | Resolved 2026-11-10 |
 | Privileged MFA | Deferred for v1; password login with controls in ADR-0003 | Resolved 2026-11-09 |
-| Email delivery | Hosted identity-provider invitations; custom notification email deferred | Yes |
+| Email delivery | Cognito emails the temporary-password invitation; custom sender/domain may remain default during testing | Resolved 2026-11-10 |
 | Dashboard period | Default last 30 days, max 12 months | Confirm |
 | CloudFront/custom domain | TBD | Yes |
 | Employee identifier format | `emp-001` username example; actual format TBD | Yes |

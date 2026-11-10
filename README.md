@@ -1,7 +1,7 @@
 # PACD WorkPilot | Internal Work and Employee Operations
 
-> **Status:** Local-first implementation in progress: React frontend, Hono Node API and PostgreSQL migrations. Hosted adapters are not implemented.
-> **Version:** 1.0.0 | **Updated:** 2026-11-09 | **Audience:** product owners, developers, coding agents and operations.
+> **Status:** Local-first application with configurable Cognito and private S3 staging adapters. AWS resources are not provisioned yet.
+> **Version:** 1.0.0 | **Updated:** 2026-11-10 | **Audience:** product owners, developers, coding agents and operations.
 
 A small internal application for **at most 30 active employee accounts**. It supports work updates, project allocations, monthly expense claims, internal requests, and management reporting. Three user-facing roles: **USER, ADMIN, SUPER_ADMIN**. Role labels do not grant blanket privileges: effective access comes from explicit policy and scope.
 
@@ -20,11 +20,11 @@ A small internal application for **at most 30 active employee accounts**. It sup
 | UI | Tailwind CSS + shadcn/ui (Radix primitives), Lucide icons, Recharts |
 | Data fetching | TanStack Query; typed fetch client; Zod validation |
 | Forms | React Hook Form + Zod |
-| Backend | Node.js TypeScript, Hono HTTP API; local Node runtime, hosted adapter later |
+| Backend | Node.js TypeScript, Hono HTTP API; local Node runtime, AWS-hosted runtime selected during deployment |
 | API entry | Local Hono server; hosted gateway selected during deployment |
 | Database | Portable PostgreSQL 16+, local through Docker Compose |
-| Login | Development-only database-backed identity selector locally; Cognito-compatible adapter later |
-| File storage | Local private adapter for development; hosted private object storage selected before deployment |
+| Login | Development-only database-backed identity selector locally; Cognito adapter in hosted mode |
+| File storage | Private S3 presigned upload/download adapter in hosted mode |
 | Live invalidation | Provider adapter: event hint only, then targeted TanStack Query invalidation |
 | Event publication | PostgreSQL transactional outbox -> hosted publisher adapter |
 | Hosting | Not selected; AWS and VPS remain candidates |
@@ -66,7 +66,9 @@ Open `http://127.0.0.1:5173`. The API listens at `http://127.0.0.1:3000`. `pnpm 
 
 Use `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:integration`, and `pnpm build` before submitting changes. Never commit `.env`; `.env.example` contains placeholders only.
 
-The local frontend is connected to the Hono API and PostgreSQL for identity profiles, dashboard aggregates, users, departments, projects, assignments, work activities, claims, requests and audit records. All writes use the API; the browser never connects to PostgreSQL. Password login, recovery, credential changes, private file content and hosted event delivery remain adapter work for a later hosted deployment. See [frontend to backend handoff](docs/FRONTEND_BACKEND_HANDOFF.md).
+The local frontend is connected to the Hono API and PostgreSQL for identity profiles, dashboard aggregates, users, departments, projects, assignments, work activities, claims, requests and audit records. Hosted mode adds Cognito invitation/password-challenge handling, API JWT verification and private S3 claim attachments. All business writes use the API; the browser never connects to PostgreSQL and never receives AWS credentials. Recovery, hosted event delivery and advanced workflow screens remain follow-up work. See [frontend to backend handoff](docs/FRONTEND_BACKEND_HANDOFF.md).
+
+Authenticated browser navigation uses canonical SPA routes: `/dashboard`, `/work`, `/people`, `/projects`, `/claims`, `/requests`, `/reports`, `/admin`, `/settings`, `/admin/audit` and `/profile`. Navigation visibility follows the effective principal, and direct inaccessible routes show an access-denied state. Hosted static delivery must rewrite unknown document requests to `index.html` so refreshing a deep link continues to work.
 
 Shared color, typography, and motion tokens live in `packages/ui/src/tokens.css`. Repository branding is sourced from `assets/logo_left.png` and `assets/favicon.png`; Vite serves that directory directly in development and copies the assets into production builds.
 

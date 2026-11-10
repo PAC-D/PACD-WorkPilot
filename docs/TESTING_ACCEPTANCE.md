@@ -22,6 +22,8 @@
 12. Different chart representations show matching counts and accessible fallback table.
 13. Unknown/expired upload presign cannot yield readable shared file; authorization on every download.
 14. Simulate outage: DB throttling, event publisher failure, stale token, partial S3 upload and recovery.
+15. Hosted auth tests cover invalid/missing bearer tokens, disabled/missing PostgreSQL profiles, temporary-password replacement and invitation failure without exposing credentials.
+16. File tests cover other-user claims, non-editable claims, oversized/disallowed files, mismatched S3 metadata, unfinalized downloads and scoped-reader access.
 
 ## Release gates
 `lint`, `typecheck`, unit/integration/E2E, dependency audit, contract compatibility check, infrastructure synth/security review, accessibility audit, backup restore test, deployment smoke test. Record test evidence; never declare production ready based on unit tests alone.

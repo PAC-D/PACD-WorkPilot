@@ -9,6 +9,7 @@ ADR-0004 makes the application local-first and PostgreSQL-based. This document i
 - Managed PostgreSQL choice pending: Aurora Serverless/RDS must follow the portable migrations and an approved connection strategy, backup policy and cost estimate.
 - Cognito User Pool Lite, invite-only; admin-created temporary passwords.
 - Private S3 documents bucket with SSE, block public access, CORS limited to frontend origin, lifecycle for incomplete uploads, no public links.
+- Application adapters use a public Cognito app client without a secret, API-side access-token verification, five-minute S3 presigns and exact metadata finalization checks under ADR-0005.
 - AppSync Events remains a candidate transport; a durable publisher reads committed PostgreSQL outbox events, authenticated channels only.
 - CloudWatch logs and alerts; AWS Budgets monthly alerts; CDK TypeScript least-privilege IAM.
 

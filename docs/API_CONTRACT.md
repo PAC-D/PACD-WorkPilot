@@ -2,6 +2,10 @@
 
 Base URL `/api/v1`; UTF-8 JSON; provider-issued bearer identity in hosted environments; all hosted routes HTTPS; resource authorization always server-side. Local development uses an explicitly enabled fictional identity adapter and never accepts it in production. Typed Zod schemas in `packages/contracts`. Do not implement undocumented endpoints without contract update.
 
+Hosted sign-in and `NEW_PASSWORD_REQUIRED` completion are identity-provider operations, not PACD WorkPilot business endpoints. Shared contracts model the outcomes so the UI can switch from sign-in to password replacement without exposing passwords or challenge sessions to this API.
+
+Hosted `POST /users` provisions Cognito first, stores Cognito `sub` as `account_sub`, applies explicit default grants transactionally, and never returns a temporary password. Local mode creates only a fictional profile. `POST /files/presign-upload` requires `{claimId,fileName,mimeType,sizeBytes}` for an actor-owned editable claim and returns a five-minute object-specific PUT URL. Finalization verifies S3 metadata before marking the file usable. Download URLs are five-minute, object-specific and authorized on every request.
+
 ## Standard response conventions
 - Successful list: `{data:[...], page:{limit:20,nextCursor:"opaque-or-null",hasMore:true}}`; `nextCursor` encodes a keyset sort tuple, query identity, expiry and signature. Never accept raw SQL or an unsigned cursor from the client. No `totalPages` or offset pagination.
 - Single record: `{data:{...}}`.
@@ -39,8 +43,8 @@ Base URL `/api/v1`; UTF-8 JSON; provider-issued bearer identity in hosted enviro
 | GET | `/dashboard/projects` | Timeline and milestone list |
 | GET | `/config` | Public-to-authenticated allowed reference/config lists |
 | PUT | `/config/:kind/:id` | Authorized configuration changes |
-| POST | `/files/presign-upload` | Signed upload intent, size/type limits |
-| POST | `/files/:id/finalize` | Validate uploaded object and attach to resource |
+| POST | `/files/presign-upload` | Claim-owned signed upload intent with size/type limits |
+| POST | `/files/:id/finalize` | HEAD-check authorized size/type and finalize metadata |
 | GET | `/files/:id/download` | Authorize, return short-lived presigned URL |
 | GET | `/audit` | Super Admin/scoped authorized audit queries |
 
