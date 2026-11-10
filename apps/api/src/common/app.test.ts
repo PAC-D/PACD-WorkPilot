@@ -45,4 +45,5 @@ test("local browser origin and identity header pass CORS preflight", async () =>
   assert.equal(response.status, 204);
   assert.equal(response.headers.get("access-control-allow-origin"), "http://127.0.0.1:5173");
   assert.match(response.headers.get("access-control-allow-headers") ?? "", /X-WorkPilot-Local-User/i);
+  assert.match(response.headers.get("access-control-allow-headers") ?? "", /Authorization/i);
 });

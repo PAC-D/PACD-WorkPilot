@@ -15,8 +15,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@pacd/contracts": "workspace:*",
+    "@aws-sdk/client-cognito-identity-provider": "^3.1164.0",
+    "@aws-sdk/client-s3": "^3.1164.0",
+    "@aws-sdk/s3-request-presigner": "^3.1164.0",
     "@hono/node-server": "1.19.9",
+    "@pacd/contracts": "workspace:*",
+    "aws-jwt-verify": "^5.2.1",
     "hono": "4.11.4",
     "pg": "8.16.3"
   },

@@ -9,7 +9,10 @@ import {
   requestTransitionInputSchema,
   upsertDepartmentInputSchema,
   versionInputSchema,
+  uploadIntentSchema,
   type Principal,
+  type Account,
+  type CreateLocalAccountInput,
 } from "@pacd/contracts";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
@@ -17,9 +20,11 @@ import { requestId } from "hono/request-id";
 
 import { CursorError } from "./common/cursor.ts";
 import { DomainError, type PlatformService } from "./modules/platform-service.ts";
+import type { FileService } from "./files/file-service.ts";
 
 export interface ApiDependencies {
   authenticate: (request: Request) => Promise<Principal | null>;
+  files?: FileService;
   listLocalIdentities?: () => Promise<ReadonlyArray<{
     displayName: string;
     employeeCode: string;
@@ -28,6 +33,7 @@ export interface ApiDependencies {
     username: string;
   }>>;
   platform?: PlatformService;
+  createUser?: (actor:Principal,input:CreateLocalAccountInput,idempotencyKey:string,requestId:string)=>Promise<Account>;
   webOrigin: string;
 }
 
@@ -38,7 +44,7 @@ export function createApi(dependencies: ApiDependencies) {
   app.use(
     "/api/*",
     cors({
-      allowHeaders: ["Content-Type", "Idempotency-Key", "If-Match", "X-WorkPilot-Local-User"],
+      allowHeaders: ["Authorization", "Content-Type", "Idempotency-Key", "If-Match", "X-WorkPilot-Local-User"],
       allowMethods: ["GET", "POST", "PATCH", "PUT", "OPTIONS"],
       credentials: false,
       origin: dependencies.webOrigin,
@@ -91,7 +97,8 @@ export function createApi(dependencies: ApiDependencies) {
     app.post("/api/v1/users", async (context) => {
       const actor = await authenticate(context.req.raw); if (!actor) return unauthenticated(context);
       const parsed = createLocalAccountInputSchema.safeParse(await context.req.json()); if (!parsed.success) return invalid(context, parsed.error.flatten());
-      return context.json({ data: await platform.createLocalAccount(actor, parsed.data, context.req.header("Idempotency-Key") ?? "", context.get("requestId")) }, 201);
+      const createUser=dependencies.createUser??((principal,input,key,id)=>platform.createLocalAccount(principal,input,key,id));
+      return context.json({ data: await createUser(actor, parsed.data, context.req.header("Idempotency-Key") ?? "", context.get("requestId")) }, 201);
     });
     app.get("/api/v1/projects", async (context) => {
       const actor = await authenticate(context.req.raw); if (!actor) return unauthenticated(context);
@@ -144,6 +151,13 @@ export function createApi(dependencies: ApiDependencies) {
       const actor = await authenticate(context.req.raw); if (!actor) return unauthenticated(context);
       return context.json({ data: await platform.dashboard(actor) });
     });
+  }
+
+  if (dependencies.files) {
+    const files=dependencies.files;
+    app.post("/api/v1/files/presign-upload",async(context)=>{const actor=await dependencies.authenticate(context.req.raw);if(!actor)return unauthenticated(context);const parsed=uploadIntentSchema.safeParse(await context.req.json());if(!parsed.success)return context.json({error:{code:"VALIDATION_ERROR",message:"Check the submitted fields",requestId:context.get("requestId"),details:parsed.error.flatten()}},400);return context.json({data:await files.authorizeUpload(actor,parsed.data,context.req.header("Idempotency-Key")??"",context.get("requestId"))},201);});
+    app.post("/api/v1/files/:id/finalize",async(context)=>{const actor=await dependencies.authenticate(context.req.raw);if(!actor)return unauthenticated(context);return context.json({data:await files.finalize(actor,context.req.param("id"),context.req.header("Idempotency-Key")??"",context.get("requestId"))});});
+    app.get("/api/v1/files/:id/download",async(context)=>{const actor=await dependencies.authenticate(context.req.raw);if(!actor)return unauthenticated(context);return context.json({data:await files.authorizeDownload(actor,context.req.param("id"))});});
   }
 
   app.notFound((context) =>

@@ -74,9 +74,13 @@ export class PlatformService {
   }
 
   async createLocalAccount(actor: Principal, input: CreateLocalAccountInput, key: string, requestId: string): Promise<Account> {
+    return this.createAccount(actor,input,`local-${input.username}`,key,requestId);
+  }
+
+  async createAccount(actor: Principal, input: CreateLocalAccountInput, accountSub:string, key: string, requestId: string): Promise<Account> {
     if (actor.role !== "SUPER_ADMIN") throw new DomainError("FORBIDDEN", "Access denied");
     return this.mutate(actor, "/users", key, input, requestId, async (client) => {
-      const id = `local-${input.username}`;
+      const id = accountSub;
       const result = await client.query<{ created_at: Date; version: number }>(`INSERT INTO accounts
         (account_sub, employee_code, username, display_name, email, department_id, role)
         VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING created_at, version`, [id, input.employeeCode, input.username, input.displayName, input.email ?? null, input.departmentId, input.role]);

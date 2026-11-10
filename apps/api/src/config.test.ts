@@ -31,6 +31,23 @@ test("allows local identity only outside production", () => {
   );
 });
 
+test("requires complete Cognito configuration in production", () => {
+  assert.throws(
+    () => readRuntimeConfig({ DATABASE_URL: "postgresql://example.invalid/workpilot", NODE_ENV: "production", CURSOR_SECRET: "secret" }),
+    /AWS_REGION, Cognito, and S3 configuration are required/,
+  );
+  const config = readRuntimeConfig({
+    AWS_REGION: "eu-north-1",
+    COGNITO_CLIENT_ID: "client-id",
+    COGNITO_USER_POOL_ID: "eu-north-1_pool",
+    CURSOR_SECRET: "secret",
+    DATABASE_URL: "postgresql://example.invalid/workpilot",
+    NODE_ENV: "production",
+    S3_UPLOAD_BUCKET: "workpilot-test-files",
+  });
+  assert.deepEqual(config.cognito, { clientId: "client-id", userPoolId: "eu-north-1_pool" });
+});
+
 test("accepts a managed DATABASE_URL without requiring local password variables", () => {
   const config = readRuntimeConfig({ DATABASE_URL: "postgresql://example.invalid/workpilot" });
   assert.equal(config.database.connectionString, "postgresql://example.invalid/workpilot");

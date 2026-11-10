@@ -1,11 +1,14 @@
 import type { PoolConfig } from "pg";
 
 export interface RuntimeConfig {
+  awsRegion: string | null;
+  cognito: { clientId: string; userPoolId: string } | null;
   cursorSecret: string;
   database: PoolConfig;
   localAuthEnabled: boolean;
   nodeEnvironment: "development" | "test" | "production";
   port: number;
+  s3Bucket: string | null;
   webOrigin: string;
 }
 
@@ -37,6 +40,16 @@ export function readRuntimeConfig(environment: NodeJS.ProcessEnv = process.env):
   }
   const cursorSecret = environment.CURSOR_SECRET?.trim();
   if (!cursorSecret && nodeEnvironment === "production") throw new Error("CURSOR_SECRET is required in production");
+  const awsRegion = environment.AWS_REGION?.trim() || null;
+  const cognitoUserPoolId = environment.COGNITO_USER_POOL_ID?.trim();
+  const cognitoClientId = environment.COGNITO_CLIENT_ID?.trim();
+  const s3Bucket = environment.S3_UPLOAD_BUCKET?.trim() || null;
+  if ((cognitoUserPoolId && !cognitoClientId) || (!cognitoUserPoolId && cognitoClientId)) {
+    throw new Error("COGNITO_USER_POOL_ID and COGNITO_CLIENT_ID must be configured together");
+  }
+  if (nodeEnvironment === "production" && (!awsRegion || !cognitoUserPoolId || !cognitoClientId || !s3Bucket)) {
+    throw new Error("AWS_REGION, Cognito, and S3 configuration are required in production");
+  }
 
   const connectionString = environment.DATABASE_URL?.trim();
   const database: PoolConfig = connectionString
@@ -50,6 +63,8 @@ export function readRuntimeConfig(environment: NodeJS.ProcessEnv = process.env):
       };
 
   return {
+    awsRegion,
+    cognito: cognitoUserPoolId && cognitoClientId ? { clientId: cognitoClientId, userPoolId: cognitoUserPoolId } : null,
     cursorSecret: cursorSecret || `local-${crypto.randomUUID()}`,
     database: {
       ...database,
@@ -61,6 +76,7 @@ export function readRuntimeConfig(environment: NodeJS.ProcessEnv = process.env):
     localAuthEnabled,
     nodeEnvironment,
     port: port(environment, "API_PORT", 3000),
+    s3Bucket,
     webOrigin: environment.WEB_ORIGIN?.trim() || "http://127.0.0.1:5173",
   };
 }

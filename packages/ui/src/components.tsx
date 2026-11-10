@@ -189,3 +189,15 @@ export function MonthPicker(props: CalendarInputProps) {
   return <CalendarInput {...props} type="month" />;
 }
 
+export function FileUpload({ accept, disabled, label = "Attach file", onSelect }: {
+  accept: string;
+  disabled?: boolean;
+  label?: string;
+  onSelect: (file: File) => void;
+}) {
+  return <label className={`interactive-control type-body inline-flex min-h-10 items-center justify-center rounded-lg border border-[var(--border)] bg-white px-3.5 py-2 font-medium text-[var(--navy-900)] hover:bg-[var(--navy-100)] ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
+    {label}
+    <input accept={accept} className="sr-only" disabled={disabled} onChange={(event)=>{const file=event.currentTarget.files?.[0];if(file)onSelect(file);event.currentTarget.value="";}} type="file"/>
+  </label>;
+}
+

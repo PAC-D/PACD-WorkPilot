@@ -1,13 +1,17 @@
 import {
   accountSchema, activitySchema, auditRecordSchema, claimSchema, dashboardSummarySchema, departmentSchema,
+  fileRecordSchema, uploadAuthorizationSchema,
   listResponseSchema, principalSchema, projectSchema, requestSchema, type CreateActivityInput, type CreateClaimInput,
   type CreateLocalAccountInput, type CreateProjectInput, type CreateRequestInput, type Principal, type UpsertDepartmentInput,
   type ClaimTransitionInput, type RequestTransitionInput, type AssignProjectMemberInput,
 } from "@pacd/contracts";
 import { z } from "zod";
 
+import { authMode, hostedAuthClient } from "../features/auth/auth-client";
+
 const apiBase = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:3000/api/v1";
 const identityKey = "workpilot.localIdentity";
+export const fileUploadsEnabled = import.meta.env.VITE_FILE_UPLOADS_ENABLED === "true";
 
 export class ApiError extends Error { readonly status:number; constructor(status: number, message: string) { super(message); this.status=status; } }
 
@@ -18,6 +22,10 @@ async function request(path: string, init: RequestInit = {}) {
   headers.set("Accept", "application/json");
   if (init.body) headers.set("Content-Type", "application/json");
   const identity = localIdentity(); if (identity) headers.set("X-WorkPilot-Local-User", identity);
+  if (authMode === "cognito") {
+    const token = await hostedAuthClient.accessToken();
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+  }
   let response: Response;
   try {
     response = await fetch(`${apiBase}${path}`, { ...init, headers });
@@ -63,4 +71,11 @@ export const apiClient = {
   async audit(cursor?:string|null) { return listResponseSchema(auditRecordSchema).parse(await request(`/audit?limit=20${cursor?`&cursor=${encodeURIComponent(cursor)}`:""}`)); },
   async dashboard() { return z.object({data:dashboardSummarySchema}).parse(await request("/dashboard/summary")).data; },
   upsertDepartment(id:string,input:UpsertDepartmentInput) { return write(`/config/departments/${encodeURIComponent(id)}`,input,departmentSchema,"PUT"); },
+  async uploadClaimFile(claimId:string,file:File) {
+    const intent={claimId,fileName:file.name,mimeType:file.type,sizeBytes:file.size};
+    const authorization=await write("/files/presign-upload",intent,uploadAuthorizationSchema);
+    const uploaded=await fetch(authorization.url,{body:file,headers:authorization.headers,method:"PUT"});
+    if(!uploaded.ok)throw new ApiError(uploaded.status,"File upload failed");
+    return write(`/files/${encodeURIComponent(authorization.file.id)}/finalize`,{},fileRecordSchema);
+  },
 };
