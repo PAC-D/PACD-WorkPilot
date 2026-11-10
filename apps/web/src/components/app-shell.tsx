@@ -15,7 +15,7 @@ import {
   UsersRound,
   X,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useState, type MouseEvent, type ReactNode } from "react";
 
 import { getNavigation } from "../lib/navigation";
 
@@ -50,6 +50,13 @@ export function AppShell({
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigation = getNavigation(principal);
 
+  function followNavigation(event: MouseEvent<HTMLAnchorElement>, pageId: string) {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    onNavigate(pageId);
+    setMobileOpen(false);
+  }
+
   const sidebar = (
     <>
       <div className="flex h-17 items-center border-b border-white/10 px-4 pr-14 lg:pr-4">
@@ -60,17 +67,15 @@ export function AppShell({
         <ul className="space-y-1">
           {navigation.map((item) => (
             <li key={item.id}>
-              <button
+              <a
+                aria-current={activePage === item.id ? "page" : undefined}
                 className={`interactive-control type-body flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-left font-medium ${activePage === item.id ? "bg-white/13 text-white" : "text-blue-50/75 hover:bg-white/8 hover:text-white"}`}
-                onClick={() => {
-                  onNavigate(item.id);
-                  setMobileOpen(false);
-                }}
-                type="button"
+                href={item.path}
+                onClick={(event) => followNavigation(event, item.id)}
               >
                 {icons[item.id]}
                 <span>{item.label}</span>
-              </button>
+              </a>
             </li>
           ))}
         </ul>

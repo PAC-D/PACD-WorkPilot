@@ -3,7 +3,7 @@ import test from "node:test";
 
 import type { Principal } from "@pacd/contracts";
 
-import { getNavigation, hasPermission } from "./navigation.ts";
+import { getNavigation, getNavigationPath, hasPermission, resolveRoute } from "./navigation.ts";
 
 const admin: Principal = {
   department: "Operations",
@@ -33,5 +33,23 @@ test("scoped Admin sees reporting areas but no Super Admin areas", () => {
 test("read permission does not imply approval permission", () => {
   assert.equal(hasPermission(admin, "claims.read.scope"), true);
   assert.equal(hasPermission(admin, "claims.approve.scope"), false);
+});
+
+test("navigation uses stable production-style paths", () => {
+  assert.equal(getNavigationPath("overview", admin), "/dashboard");
+  assert.equal(getNavigationPath("projects", admin), "/projects");
+  assert.equal(getNavigationPath("configuration", admin), null);
+});
+
+test("direct routes enforce role and permission visibility", () => {
+  assert.deepEqual(resolveRoute("/reports", admin), { kind: "allowed", pageId: "reports" });
+  assert.deepEqual(resolveRoute("/admin", admin), { kind: "forbidden" });
+  assert.deepEqual(resolveRoute("/settings", admin), { kind: "forbidden" });
+  assert.deepEqual(resolveRoute("/missing", admin), { kind: "not-found" });
+});
+
+test("root and login redirect authenticated users to dashboard", () => {
+  assert.deepEqual(resolveRoute("/", admin), { kind: "redirect", path: "/dashboard" });
+  assert.deepEqual(resolveRoute("/login", admin), { kind: "redirect", path: "/dashboard" });
 });
 
