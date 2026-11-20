@@ -4,7 +4,7 @@ Base URL `/api/v1`; UTF-8 JSON; provider-issued bearer identity in hosted enviro
 
 Hosted sign-in and `NEW_PASSWORD_REQUIRED` completion are identity-provider operations, not PACD WorkPilot business endpoints. Shared contracts model the outcomes so the UI can switch from sign-in to password replacement without exposing passwords or challenge sessions to this API.
 
-Hosted `POST /users` provisions Cognito first, stores Cognito `sub` as `account_sub`, applies explicit default grants transactionally, and never returns a temporary password. Local mode creates only a fictional profile. `POST /files/presign-upload` requires `{claimId,fileName,mimeType,sizeBytes}` for an actor-owned editable claim and returns a five-minute object-specific PUT URL. Finalization verifies S3 metadata before marking the file usable. Download URLs are five-minute, object-specific and authorized on every request.
+Hosted `POST /users` accepts profile fields plus `temporaryPassword`, provisions Cognito first with message delivery suppressed, stores Cognito `sub` as `account_sub`, applies explicit default grants transactionally, and never stores or returns the password. Email is optional. Local mode creates only a fictional profile. `POST /files/presign-upload` requires `{claimId,fileName,mimeType,sizeBytes}` for an actor-owned editable claim and returns a five-minute object-specific PUT URL. Finalization verifies S3 metadata before marking the file usable. Download URLs are five-minute, object-specific and authorized on every request.
 
 ## Standard response conventions
 - Successful list: `{data:[...], page:{limit:20,nextCursor:"opaque-or-null",hasMore:true}}`; `nextCursor` encodes a keyset sort tuple, query identity, expiry and signature. Never accept raw SQL or an unsigned cursor from the client. No `totalPages` or offset pagination.
@@ -51,7 +51,7 @@ Hosted `POST /users` provisions Cognito first, stores Cognito `sub` as `account_
 ## Query conventions
 `?limit=20&cursor=<opaque>&status=...&projectId=...&from=2026-11-01&to=2026-11-30`. If filters/sort change, discard cursor. `cursor` signatures bind viewer, query parameters, expiry and policyVersion; return 400/410 on mismatch/expiry. All time ranges bounded.
 
-When the development identity adapter is explicitly enabled, `POST /users` creates only a fictional local profile and default grants. It never accepts, generates, returns or stores a password. The profile becomes selectable from `/development/identities`. Hosted behavior must provision credentials through the approved identity provider while preserving the same application profile contract.
+When the development identity adapter is explicitly enabled, `POST /users` creates only a fictional local profile and default grants. It never accepts, generates, returns or stores a password. The profile becomes selectable from `/development/identities`. Hosted behavior provisions through Cognito while preserving the persisted application profile contract. The one-time password is transport-only input and is excluded from the returned profile, idempotency body/hash, audit state, and events.
 
 ## Real-time contract
 Not a business API: the selected authorized event adapter publishes `EntityChanged` `{eventId,type,entityId,scope,version,occurredAt}`; no records or secrets. Local development may use an in-process adapter; AppSync Events is only an AWS candidate. See `REALTIME_CACHE.md` and `contracts/event.schema.json`.

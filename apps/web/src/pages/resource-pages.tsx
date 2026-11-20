@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent, type ReactNode } from "react";
 
 import { apiClient, fileUploadsEnabled } from "../lib/api-client";
+import { authMode } from "../features/auth/auth-client";
 
 function Page({ children, description, title }: { children:ReactNode; description:string; title:string }) {
   return <div className="dashboard-stack space-y-5"><header><h1 className="type-page-title text-[var(--navy-950)]">{title}</h1><p className="type-body mt-1 text-[var(--muted)]">{description}</p></header>{children}</div>;
@@ -22,11 +23,12 @@ function useCursorList<T>(key:string, loader:(cursor:string|null)=>Promise<{data
 export function UsersPage({ canCreate }: { canCreate:boolean }) {
   const client=useQueryClient(), list=useCursorList("users",apiClient.users); const config=useQuery({queryKey:["config"],queryFn:apiClient.config});
   const create=useMutation({mutationFn:apiClient.createUser,onSuccess:async()=>{await client.invalidateQueries({queryKey:["users"]});}});
-  function submit(event:FormEvent<HTMLFormElement>){event.preventDefault();const f=new FormData(event.currentTarget);create.mutate({departmentId:String(f.get("departmentId")),displayName:String(f.get("displayName")),email:String(f.get("email"))||null,employeeCode:String(f.get("employeeCode")),role:String(f.get("role")) as "USER"|"ADMIN"|"SUPER_ADMIN",username:String(f.get("username"))});event.currentTarget.reset();}
+  function submit(event:FormEvent<HTMLFormElement>){event.preventDefault();const form=event.currentTarget;const f=new FormData(form);const profile={departmentId:String(f.get("departmentId")),displayName:String(f.get("displayName")),email:String(f.get("email"))||null,employeeCode:String(f.get("employeeCode")),role:String(f.get("role")) as "USER"|"ADMIN"|"SUPER_ADMIN",username:String(f.get("username"))};create.mutate(authMode==="cognito"?{...profile,temporaryPassword:String(f.get("temporaryPassword"))}:profile,{onSuccess:()=>form.reset()});}
   return <Page description="Database-backed employee profiles and identity-provider access." title="Users & Access">
-    {canCreate?<Card><CardHeader title="Create user" description="Creates the application profile and role defaults; hosted Cognito sends the invitation email."/><form className="grid gap-4 p-5 md:grid-cols-3" onSubmit={submit}>
+    {canCreate?<Card><CardHeader title="Create user" description={authMode==="cognito"?"Creates a Cognito login without sending email. Give the one-time credential to the user securely.":"Creates a local fictional profile with no password."}/><form className="grid gap-4 p-5 md:grid-cols-3" onSubmit={submit}>
       <Field label="Display name"><input className={inputClass} name="displayName" required/></Field><Field label="Employee code"><input className={inputClass} name="employeeCode" required/></Field><Field label="Username"><input className={inputClass} name="username" pattern="[a-z0-9._-]+" required/></Field>
       <Field label="Email"><input className={inputClass} name="email" type="email"/></Field><Field label="Department"><select className={inputClass} name="departmentId" required>{config.data?.departments.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></Field><Field label="Role"><select className={inputClass} name="role"><option>USER</option><option>ADMIN</option><option>SUPER_ADMIN</option></select></Field>
+      {authMode==="cognito"?<Field label="One-time temporary password"><input autoComplete="new-password" className={inputClass} minLength={12} name="temporaryPassword" required type="password"/></Field>:null}
       <div className="md:col-span-3"><Message error={create.error}/><Button disabled={create.isPending} type="submit">{create.isPending?"Creating...":"Create user"}</Button></div>
     </form></Card>:null}
     <Card><CardHeader title="People" description="Profiles visible to your authorized scope."/>{list.query.data?.data.length?<><DataTable caption="Users" rows={list.query.data.data} getRowKey={r=>r.id} columns={[

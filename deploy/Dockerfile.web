@@ -1,0 +1,33 @@
+FROM node:26.13.0-bookworm-slim AS build
+
+WORKDIR /app
+RUN corepack enable
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+COPY apps/web/package.json apps/web/package.json
+COPY packages/contracts/package.json packages/contracts/package.json
+COPY packages/ui/package.json packages/ui/package.json
+RUN pnpm install --frozen-lockfile
+
+COPY apps/web apps/web
+COPY packages/contracts packages/contracts
+COPY packages/ui packages/ui
+COPY assets assets
+
+ARG VITE_AUTH_MODE=cognito
+ARG VITE_COGNITO_USER_POOL_ID
+ARG VITE_COGNITO_CLIENT_ID
+ARG VITE_FILE_UPLOADS_ENABLED=true
+ARG VITE_API_URL=/api/v1
+ENV VITE_AUTH_MODE=$VITE_AUTH_MODE
+ENV VITE_COGNITO_USER_POOL_ID=$VITE_COGNITO_USER_POOL_ID
+ENV VITE_COGNITO_CLIENT_ID=$VITE_COGNITO_CLIENT_ID
+ENV VITE_FILE_UPLOADS_ENABLED=$VITE_FILE_UPLOADS_ENABLED
+ENV VITE_API_URL=$VITE_API_URL
+RUN pnpm --filter @pacd/web build
+
+FROM nginx:1.29-alpine
+COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
+COPY deploy/security-headers.conf /etc/nginx/snippets/workpilot-security-headers.conf
+COPY --from=build /app/apps/web/dist /usr/share/nginx/html
+EXPOSE 80

@@ -6,6 +6,7 @@
   "scripts": {
     "build": "pnpm --recursive --if-present build",
     "db:check": "pnpm --filter @pacd/api db:check",
+    "db:bootstrap-super-admin": "pnpm --filter @pacd/api db:bootstrap-super-admin",
     "db:down": "docker compose down",
     "db:migrate": "pnpm --filter @pacd/api db:migrate",
     "db:seed": "pnpm --filter @pacd/api db:seed",

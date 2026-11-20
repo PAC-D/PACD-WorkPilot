@@ -1,6 +1,6 @@
-# AWS deployment and cost-control guide (candidate only)
+# Historical managed-AWS deployment candidate
 
-ADR-0004 makes the application local-first and PostgreSQL-based. This document is retained as an AWS candidate, not an approved deployment. Do not provision resources until the company approves the account, region, IAM deployment role and budget.
+ADR-0006 selects the simpler Lightsail single-instance deployment documented in `LIGHTSAIL_DEPLOYMENT.md`. This managed-service design is retained only as a future scaling candidate and is not approved for the initial deployment. Do not provision these resources without a new ADR and cost approval.
 
 ## Baseline deployment
 - `us-east-1` is **an illustrative default only**; choose final region based on organizational data-residency, latency to Bangladesh, availability and price before CDK deployment. Document region decision.

@@ -1,6 +1,6 @@
 # PACD WorkPilot | Internal Work and Employee Operations
 
-> **Status:** Local-first application with configurable Cognito and private S3 staging adapters. AWS resources are not provisioned yet.
+> **Status:** Local-first application with an approved single-instance Lightsail deployment profile. AWS resources are not provisioned by this repository.
 > **Version:** 1.0.0 | **Updated:** 2026-11-10 | **Audience:** product owners, developers, coding agents and operations.
 
 A small internal application for **at most 30 active employee accounts**. It supports work updates, project allocations, monthly expense claims, internal requests, and management reporting. Three user-facing roles: **USER, ADMIN, SUPER_ADMIN**. Role labels do not grant blanket privileges: effective access comes from explicit policy and scope.
@@ -8,7 +8,7 @@ A small internal application for **at most 30 active employee accounts**. It sup
 ## Start here
 1. Read [AGENTS.md](AGENTS.md), [product requirements](docs/PRD.md), [architecture](docs/ARCHITECTURE.md), [security and RBAC](docs/SECURITY_RBAC.md) **before changing code**.
 2. Consult [data model](docs/DATA_MODEL.md), [API contract](docs/API_CONTRACT.md), [realtime/cache rules](docs/REALTIME_CACHE.md), and [UI system](docs/UI_DESIGN_SYSTEM.md) for domain changes.
-3. Consult [AWS deployment](docs/AWS_DEPLOYMENT_COST.md) before infrastructure work; [testing](docs/TESTING_ACCEPTANCE.md) before pull requests.
+3. Consult the approved [Lightsail deployment runbook](docs/LIGHTSAIL_DEPLOYMENT.md) before infrastructure work; [testing](docs/TESTING_ACCEPTANCE.md) before pull requests. The [managed-AWS design](docs/AWS_DEPLOYMENT_COST.md) is historical/future context only.
 4. Record architectural deviations in `docs/adr/`; update documentation and tests in the same PR. Do not silently substitute libraries, databases, polling, or identity providers.
 5. See [implementation plan](docs/IMPLEMENTATION_PLAN.md) for the order of work.
 
@@ -27,12 +27,12 @@ A small internal application for **at most 30 active employee accounts**. It sup
 | File storage | Private S3 presigned upload/download adapter in hosted mode |
 | Live invalidation | Provider adapter: event hint only, then targeted TanStack Query invalidation |
 | Event publication | PostgreSQL transactional outbox -> hosted publisher adapter |
-| Hosting | Not selected; AWS and VPS remain candidates |
+| Hosting | Amazon Lightsail Linux instance; Docker Compose; Nginx + Hono + PostgreSQL (ADR-0006) |
 | IaC | Added only after hosting approval |
 | Logging | Structured JSON with correlation IDs and redacted PII |
 | No now | Redis, Supabase platform, Firebase, Prisma, cron polling, SSR, Next.js, microservices, GraphQL business API |
 
-**Deployment constraint:** local development incurs no cloud cost. Before any hosted deployment, approve the provider, region, database topology, identity, private file storage, backup policy and budget. ADR-0004 keeps PostgreSQL portable so this decision can be made later.
+**Deployment constraint:** local development incurs no cloud cost. ADR-0006 approves the Lightsail topology and manual credential handoff; region, backup retention, restore evidence, instance size and budget still require operational confirmation before launch.
 
 ## User journeys
 - **User** selects assigned projects, logs or revises activity, uploads expenses by billing month, submits requests, and tracks status.
@@ -66,7 +66,7 @@ Open `http://127.0.0.1:5173`. The API listens at `http://127.0.0.1:3000`. `pnpm 
 
 Use `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:integration`, and `pnpm build` before submitting changes. Never commit `.env`; `.env.example` contains placeholders only.
 
-The local frontend is connected to the Hono API and PostgreSQL for identity profiles, dashboard aggregates, users, departments, projects, assignments, work activities, claims, requests and audit records. Hosted mode adds Cognito invitation/password-challenge handling, API JWT verification and private S3 claim attachments. All business writes use the API; the browser never connects to PostgreSQL and never receives AWS credentials. Recovery, hosted event delivery and advanced workflow screens remain follow-up work. See [frontend to backend handoff](docs/FRONTEND_BACKEND_HANDOFF.md).
+The local frontend is connected to the Hono API and PostgreSQL for identity profiles, dashboard aggregates, users, departments, projects, assignments, work activities, claims, requests and audit records. Hosted mode uses Cognito with suppressed delivery and a Super Admin-supplied one-time password, API JWT verification and private S3 claim attachments. All business writes use the API; the browser never connects to PostgreSQL and never receives AWS credentials. Recovery, hosted event delivery and advanced workflow screens remain follow-up work. See [frontend to backend handoff](docs/FRONTEND_BACKEND_HANDOFF.md) and the [Lightsail runbook](docs/LIGHTSAIL_DEPLOYMENT.md).
 
 Authenticated browser navigation uses canonical SPA routes: `/dashboard`, `/work`, `/people`, `/projects`, `/claims`, `/requests`, `/reports`, `/admin`, `/settings`, `/admin/audit` and `/profile`. Navigation visibility follows the effective principal, and direct inaccessible routes show an access-denied state. Hosted static delivery must rewrite unknown document requests to `index.html` so refreshing a deep link continues to work.
 
@@ -79,7 +79,7 @@ apps/api/                  Hono API, PostgreSQL migrations and domain services
 packages/contracts/        Zod schemas and typed API/event contracts
 packages/ui/               Shared UI/design tokens/components
 compose.yaml               Local PostgreSQL
-infra/                     Hosted infrastructure after approval (planned)
+deploy/                    Lightsail container/runtime configuration
 contracts/                 Versioned JSON schemas/examples
 .docs or docs/             ADRs, PRD, security, data, deployment, tests
 ```

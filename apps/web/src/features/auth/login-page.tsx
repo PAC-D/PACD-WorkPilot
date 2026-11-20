@@ -92,7 +92,7 @@ export function HostedLoginPage({ error, isPending, needsNewPassword, onComplete
     <div>
       <p className="type-overline text-[var(--navy-500)]">Secure workspace</p>
       <h2 className="login-card-title" id="sign-in-title">{needsNewPassword ? "Create your password" : "Sign in"}</h2>
-      <p className="type-body mt-2 text-[var(--muted)]">{needsNewPassword ? "Replace the temporary password before continuing." : "Use the username and temporary or permanent password from your invitation."}</p>
+      <p className="type-body mt-2 text-[var(--muted)]">{needsNewPassword ? "Replace the temporary password before continuing." : "Use the username and temporary or permanent password given to you by an administrator."}</p>
     </div>
     {needsNewPassword ? <form className="mt-8 space-y-4" onSubmit={submitNewPassword}>
       <label className="login-label">New password<input autoComplete="new-password" className="login-input" name="newPassword" required type="password"/></label>
@@ -106,7 +106,7 @@ export function HostedLoginPage({ error, isPending, needsNewPassword, onComplete
       {validationError || error ? <p className="login-error" role="alert">{validationError ?? error}</p> : null}
       <button className="login-submit" disabled={isPending} type="submit"><span>{isPending ? "Signing in..." : "Sign in"}</span><ArrowRight aria-hidden="true" size={18}/></button>
     </form>}
-    <div className="login-help"><p>Invite-only access</p><p>PACD WorkPilot never stores your password.</p></div>
+    <div className="login-help"><p>Administrator-created access only</p><p>PACD WorkPilot never stores your password.</p></div>
   </AuthLayout>;
 }
 

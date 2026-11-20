@@ -1,6 +1,7 @@
 import type { PoolConfig } from "pg";
 
 export interface RuntimeConfig {
+  apiHost: string;
   awsRegion: string | null;
   cognito: { clientId: string; userPoolId: string } | null;
   cursorSecret: string;
@@ -63,6 +64,7 @@ export function readRuntimeConfig(environment: NodeJS.ProcessEnv = process.env):
       };
 
   return {
+    apiHost: environment.API_HOST?.trim() || "127.0.0.1",
     awsRegion,
     cognito: cognitoUserPoolId && cognitoClientId ? { clientId: cognitoClientId, userPoolId: cognitoUserPoolId } : null,
     cursorSecret: cursorSecret || `local-${crypto.randomUUID()}`,

@@ -30,10 +30,10 @@ const app = createApi({
   platform,
   webOrigin: config.webOrigin,
 });
-const server = serve({ fetch: app.fetch, hostname: "127.0.0.1", port: config.port });
+const server = serve({ fetch: app.fetch, hostname: config.apiHost, port: config.port });
 
 server.once("listening", () => {
-  console.log(JSON.stringify({ event: "api_started", host: "127.0.0.1", port: config.port }));
+  console.log(JSON.stringify({ event: "api_started", host: config.apiHost, port: config.port }));
 });
 
 server.once("error", (error) => {

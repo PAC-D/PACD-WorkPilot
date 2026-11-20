@@ -1,0 +1,12 @@
+.agents
+.aws
+.codex
+.env
+.env.*
+.git
+.github
+**/dist
+**/node_modules
+**/*.tsbuildinfo
+coverage
+deploy/lightsail.env

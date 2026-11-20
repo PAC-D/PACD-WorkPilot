@@ -1,7 +1,7 @@
 # Operational runbook (baseline)
 
 ## User onboarding
-In a hosted environment, Super Admin uses user management to create an account with a unique username/employee code and role; the approved identity provider issues the credential and first-login challenge. Local development uses fictional selectable identities and no passwords. No shared admin passwords. Privileged role grants require reason and audit.
+In a hosted environment, Super Admin uses user management to create an account with a unique username/employee code and role, supplies a one-time Cognito password, and hands it to the user through an approved private channel. Cognito delivery is suppressed and forces a replacement password at first login. Local development uses fictional selectable identities and no passwords. No shared admin passwords. Privileged role grants require reason and audit.
 
 ## Admin approval incident
 If unauthorized approval suspected: disable account/revoke sessions; preserve audit; inspect claims approval state and transaction records; do not erase history; correct via explicit reversal workflow (future contract) or documented manual financial reconciliation; rotate affected access.

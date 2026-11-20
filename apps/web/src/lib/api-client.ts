@@ -2,7 +2,7 @@ import {
   accountSchema, activitySchema, auditRecordSchema, claimSchema, dashboardSummarySchema, departmentSchema,
   fileRecordSchema, uploadAuthorizationSchema,
   listResponseSchema, principalSchema, projectSchema, requestSchema, type CreateActivityInput, type CreateClaimInput,
-  type CreateLocalAccountInput, type CreateProjectInput, type CreateRequestInput, type Principal, type UpsertDepartmentInput,
+  type CreateHostedAccountInput, type CreateLocalAccountInput, type CreateProjectInput, type CreateRequestInput, type Principal, type UpsertDepartmentInput,
   type ClaimTransitionInput, type RequestTransitionInput, type AssignProjectMemberInput,
 } from "@pacd/contracts";
 import { z } from "zod";
@@ -30,7 +30,7 @@ async function request(path: string, init: RequestInit = {}) {
   try {
     response = await fetch(`${apiBase}${path}`, { ...init, headers });
   } catch {
-    throw new ApiError(0, `Cannot reach the local API at ${apiBase}. Start it with "pnpm dev:api", then retry.`);
+    throw new ApiError(0, `Cannot reach the WorkPilot API at ${apiBase}. Check the server connection, then retry.`);
   }
   const body = await response.json() as unknown;
   if (!response.ok) {
@@ -54,7 +54,7 @@ export const apiClient = {
   async me() { return z.object({data:principalSchema}).parse(await request("/me")).data; },
   async config() { return z.object({data:z.object({departments:z.array(departmentSchema)})}).parse(await request("/config")).data; },
   async users(cursor?:string|null) { return listResponseSchema(accountSchema).parse(await request(`/users?limit=20${cursor?`&cursor=${encodeURIComponent(cursor)}`:""}`)); },
-  createUser(input:CreateLocalAccountInput) { return write("/users",input,accountSchema); },
+  createUser(input:CreateLocalAccountInput | CreateHostedAccountInput) { return write("/users",input,accountSchema); },
   async projects(cursor?:string|null) { return listResponseSchema(projectSchema).parse(await request(`/projects?limit=20${cursor?`&cursor=${encodeURIComponent(cursor)}`:""}`)); },
   createProject(input:CreateProjectInput) { return write("/projects",input,projectSchema); },
   assignProjectMember(projectId:string,input:AssignProjectMemberInput){return write(`/projects/${encodeURIComponent(projectId)}/members`,input,z.object({accountSub:z.string(),id:z.string(),projectId:z.string()}));},

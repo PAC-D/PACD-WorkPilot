@@ -11,10 +11,10 @@ The Hono API uses the official AWS SDK S3 client to issue short-lived, object-sp
 
 ## Identity policy
 - Public self-registration is disabled.
-- Super Admin provisioning uses Cognito administrator APIs in a later server-side provisioning increment; no temporary password is returned by PACD WorkPilot.
-- Cognito emails the invitation and temporary password; temporary credentials expire after 7 days.
+- Super Admin provisioning uses Cognito administrator APIs; no temporary password is stored or returned by PACD WorkPilot.
+- ADR-0006 overrides email delivery: account creation suppresses messages and passes a Super Admin-supplied one-time password directly to Cognito; temporary credentials expire after 7 days.
 - Permanent passwords require at least 12 characters with uppercase, lowercase, number and special-character classes.
-- First sign-in completes Cognito's `NEW_PASSWORD_REQUIRED` challenge. Passwords and provider challenge material are never sent to the PACD WorkPilot API or stored in PostgreSQL.
+- First sign-in completes Cognito's `NEW_PASSWORD_REQUIRED` challenge. The creation API is the sole exception at the identity boundary: it accepts the one-time password over HTTPS only for immediate Cognito provisioning and excludes it from all persistence and responses. Replacement/permanent passwords and provider challenge material never enter the PACD WorkPilot API or PostgreSQL.
 - MFA remains deferred under ADR-0003.
 
 ## Boundaries

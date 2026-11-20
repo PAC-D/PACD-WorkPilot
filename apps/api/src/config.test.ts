@@ -6,12 +6,18 @@ import { readRuntimeConfig } from "./config.ts";
 test("builds a bounded local PostgreSQL pool configuration", () => {
   const config = readRuntimeConfig({ POSTGRES_PASSWORD: "local-test-only" });
 
+  assert.equal(config.apiHost, "127.0.0.1");
   assert.equal(config.database.host, "127.0.0.1");
   assert.equal(config.database.database, "workpilot");
   assert.equal(config.database.max, 5);
   assert.equal(config.localAuthEnabled, false);
   assert.equal(config.nodeEnvironment, "development");
   assert.equal(config.port, 3000);
+});
+
+test("accepts an explicit container listen address", () => {
+  const config = readRuntimeConfig({ API_HOST: "0.0.0.0", POSTGRES_PASSWORD: "local-test-only" });
+  assert.equal(config.apiHost, "0.0.0.0");
 });
 
 test("allows local identity only outside production", () => {

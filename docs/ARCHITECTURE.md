@@ -3,7 +3,7 @@
 ## Runtime profiles
 Local development: Browser -> Vite SPA -> Hono Node server -> local PostgreSQL. Identity, files and event delivery use explicit development adapters with fictional data only.
 
-Hosted deployment remains provider-configurable: compiled SPA -> CDN/static storage; browser -> Hono HTTP API -> PostgreSQL/private object storage/approved identity provider. AWS staging uses `eu-north-1`, Cognito identity and private S3 files under ADR-0005. CloudFront/S3, API Gateway/Lambda and managed PostgreSQL remain infrastructure candidates; the final runtime and hosted PostgreSQL topology still require the deployment ADR required by ADR-0004.
+Hosted deployment follows ADR-0006: Lightsail distribution -> Nginx on one Lightsail instance -> compiled SPA or Hono API -> instance PostgreSQL/private S3/Cognito. AWS staging uses `eu-north-1`, Cognito identity and private S3 files under ADR-0005. PostgreSQL remains portable, but the approved initial hosted topology is the single Lightsail instance.
 
 The SPA owns canonical browser routes and uses the History API without a routing dependency. Static hosting must return `index.html` for application document routes while continuing to serve real assets and API requests normally. Route visibility is derived from the authenticated principal, but server authorization remains authoritative.
 
@@ -43,7 +43,7 @@ At 30 employees, bounded indexed aggregate queries over fixed date ranges are ac
 
 ## Architectural rules
 - Frontend never trusts role stored in local storage; server always authorizes.
-- Cognito temporary-password authentication is represented as an opaque `NEW_PASSWORD_REQUIRED` challenge. The browser submits the replacement password only to the identity-provider adapter; PACD WorkPilot APIs and PostgreSQL never receive or store it.
+- Cognito temporary-password authentication is represented as an opaque `NEW_PASSWORD_REQUIRED` challenge. The hosted account-creation API accepts a one-time password only to pass it directly to Cognito with delivery suppressed; it is excluded from persistence, audit, idempotency, logs, and responses. The browser submits the replacement password only to the identity-provider adapter. PostgreSQL never receives or stores either password.
 - `updatedAt`, version and event sequence support cache reconciliation. Events are notifications, not primary state.
 - Event delivery is best effort; browser visibility/reconnect manual refresh are fallback.
 - Browser should fetch dashboard **once on open**, and when a relevant mutation/event/focus/reconnect occurs. No time-based refetch.
@@ -52,4 +52,4 @@ At 30 employees, bounded indexed aggregate queries over fixed date ranges are ac
 - No free-form arbitrary report builder in v1.
 
 ## Alternatives explicitly rejected for v1
-Full Supabase platform, Prisma, Next.js SSR, Redis, backend cron polling and microservices remain rejected. AWS-managed PostgreSQL versus a PostgreSQL VPS is a later deployment decision with cost and operations review.
+Full Supabase platform, Prisma, Next.js SSR, Redis, backend cron polling and microservices remain rejected. ADR-0006 selects PostgreSQL on the Lightsail instance for the initial small installation; moving it to a managed provider requires another ADR.

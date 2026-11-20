@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { completeNewPasswordInputSchema, dateRangeQuerySchema, MAX_UPLOAD_BYTES, paginationQuerySchema, signInInputSchema, signInOutcomeSchema, uploadIntentSchema } from "./index.ts";
+import { createHostedAccountInputSchema } from "./platform.ts";
 
 test("sign-in requires both username and password without storing either", () => {
   assert.equal(signInInputSchema.safeParse({ password: "", username: "emp-001" }).success, false);
@@ -15,6 +16,15 @@ test("first-login challenge requires matching replacement passwords and an opaqu
   assert.equal(completeNewPasswordInputSchema.safeParse({ ...valid, confirmPassword: "different" }).success, false);
   assert.equal(completeNewPasswordInputSchema.safeParse({ ...valid, confirmPassword: "short", newPassword: "short" }).success, false);
   assert.equal(signInOutcomeSchema.safeParse({ status: "NEW_PASSWORD_REQUIRED" }).success, true);
+});
+
+test("hosted account creation requires a strong one-time password but not an email address", () => {
+  const input = {
+    departmentId: "operations", displayName: "Test User", email: null, employeeCode: "EMP-002",
+    role: "USER", temporaryPassword: "Temporary-42!", username: "emp-002",
+  };
+  assert.equal(createHostedAccountInputSchema.safeParse(input).success, true);
+  assert.equal(createHostedAccountInputSchema.safeParse({ ...input, temporaryPassword: "weak" }).success, false);
 });
 
 test("shared pagination defaults to 20 and caps requests at 100", () => {

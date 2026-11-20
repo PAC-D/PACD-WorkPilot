@@ -4,6 +4,7 @@ import {
   claimTransitionInputSchema,
   createClaimInputSchema,
   createLocalAccountInputSchema,
+  createHostedAccountInputSchema,
   createProjectInputSchema,
   createRequestInputSchema,
   requestTransitionInputSchema,
@@ -13,6 +14,7 @@ import {
   type Principal,
   type Account,
   type CreateLocalAccountInput,
+  type CreateHostedAccountInput,
 } from "@pacd/contracts";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
@@ -33,7 +35,7 @@ export interface ApiDependencies {
     username: string;
   }>>;
   platform?: PlatformService;
-  createUser?: (actor:Principal,input:CreateLocalAccountInput,idempotencyKey:string,requestId:string)=>Promise<Account>;
+  createUser?: (actor:Principal,input:CreateHostedAccountInput,idempotencyKey:string,requestId:string)=>Promise<Account>;
   webOrigin: string;
 }
 
@@ -96,9 +98,13 @@ export function createApi(dependencies: ApiDependencies) {
     });
     app.post("/api/v1/users", async (context) => {
       const actor = await authenticate(context.req.raw); if (!actor) return unauthenticated(context);
-      const parsed = createLocalAccountInputSchema.safeParse(await context.req.json()); if (!parsed.success) return invalid(context, parsed.error.flatten());
-      const createUser=dependencies.createUser??((principal,input,key,id)=>platform.createLocalAccount(principal,input,key,id));
-      return context.json({ data: await createUser(actor, parsed.data, context.req.header("Idempotency-Key") ?? "", context.get("requestId")) }, 201);
+      const body: unknown = await context.req.json();
+      if (dependencies.createUser) {
+        const parsed = createHostedAccountInputSchema.safeParse(body); if (!parsed.success) return invalid(context, parsed.error.flatten());
+        return context.json({ data: await dependencies.createUser(actor, parsed.data, context.req.header("Idempotency-Key") ?? "", context.get("requestId")) }, 201);
+      }
+      const parsed = createLocalAccountInputSchema.safeParse(body); if (!parsed.success) return invalid(context, parsed.error.flatten());
+      return context.json({ data: await platform.createLocalAccount(actor, parsed.data, context.req.header("Idempotency-Key") ?? "", context.get("requestId")) }, 201);
     });
     app.get("/api/v1/projects", async (context) => {
       const actor = await authenticate(context.req.raw); if (!actor) return unauthenticated(context);

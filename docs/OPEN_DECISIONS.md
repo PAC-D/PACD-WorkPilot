@@ -5,8 +5,8 @@ All changes require product-owner decision and, when technical choices change, a
 | Decision | Working default | Owner acceptance required |
 |---|---|---|
 | AWS staging region | `eu-north-1` (Europe/Stockholm) | Resolved 2026-11-10 |
-| Hosted runtime/provider | Local-first accepted; AWS-managed services versus VPS remains TBD | Yes before deployment |
-| Hosted PostgreSQL | Portable PostgreSQL accepted; Aurora/RDS versus VPS remains TBD | Yes before deployment |
+| Hosted runtime/provider | Amazon Lightsail single instance with Docker Compose (ADR-0006) | Resolved 2026-11-20 |
+| Hosted PostgreSQL | PostgreSQL 16 on the Lightsail instance; restore-tested external logical backup required | Resolved 2026-11-20 |
 | Organization timezone | `Asia/Dhaka` | Confirm |
 | Claim type limits/caps | Accepted: no auto-payment; optional policy caps initially unset | Resolved 2026-11-09 |
 | Duplicate mobile/internet rule | Accepted: one active claim/type/person/month | Resolved 2026-11-09; marker release still TBD |
@@ -21,7 +21,7 @@ All changes require product-owner decision and, when technical choices change, a
 | Session duration | Hosted identity-provider security policy TBD | Yes |
 | Cognito password policy | Minimum 12 characters with uppercase, lowercase, number and special character; administrator temporary password valid 7 days | Resolved 2026-11-10 |
 | Privileged MFA | Deferred for v1; password login with controls in ADR-0003 | Resolved 2026-11-09 |
-| Email delivery | Cognito emails the temporary-password invitation; custom sender/domain may remain default during testing | Resolved 2026-11-10 |
+| Email delivery | No delivery integration; Cognito messages suppressed and Super Admin hands off a one-time credential privately | Resolved 2026-11-20 (ADR-0006) |
 | Dashboard period | Default last 30 days, max 12 months | Confirm |
 | CloudFront/custom domain | TBD | Yes |
 | Employee identifier format | `emp-001` username example; actual format TBD | Yes |

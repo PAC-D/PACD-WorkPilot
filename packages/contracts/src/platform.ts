@@ -16,6 +16,19 @@ export const createLocalAccountInputSchema = z.object({
 });
 export type CreateLocalAccountInput = z.infer<typeof createLocalAccountInputSchema>;
 
+export const createHostedAccountInputSchema = createLocalAccountInputSchema.extend({
+  temporaryPassword: z
+    .string()
+    .min(12, "Use at least 12 characters")
+    .max(256)
+    .regex(/[a-z]/, "Add a lowercase letter")
+    .regex(/[A-Z]/, "Add an uppercase letter")
+    .regex(/[0-9]/, "Add a number")
+    .regex(/[^A-Za-z0-9]/, "Add a special character")
+    .regex(/^\S+$/, "Do not use spaces"),
+});
+export type CreateHostedAccountInput = z.infer<typeof createHostedAccountInputSchema>;
+
 export const projectSchema = z.object({
   actualEndDate: z.string().nullable(), code: z.string(), description: z.string(), id: z.string(),
   memberCount: z.number().int().nonnegative(), name: z.string(), ownerName: z.string(), ownerSub: z.string(),

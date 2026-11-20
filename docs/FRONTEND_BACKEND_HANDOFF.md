@@ -18,7 +18,7 @@
 | Concern | Local state | Required before production |
 |---|---|---|
 | Authentication | Local selector plus hosted Cognito sign-in, `NEW_PASSWORD_REQUIRED`, bearer token and API verification | Recovery UI, revocation operations and final production session policy |
-| User provisioning | Local profile or hosted Cognito email invitation plus PostgreSQL grants | Disable/reset/revoke screens and production email sender validation |
+| User provisioning | Local profile or hosted Cognito suppressed-delivery credential plus PostgreSQL grants | Disable/reset/revoke screens and secure manual handoff procedure validation |
 | Domain workflows | Create, list, assignment, submit and core approval paths | Detail/edit screens, remaining needs-info/reject/paid/fulfilled controls and complete transition matrix |
 | Files | Hosted private S3 claim upload/finalize/download adapter | Malware scanning/quarantine policy and remaining activity/request attachment surfaces |
 | Live invalidation | Transactional outbox rows | Local publisher plus approved hosted event transport and channel authorization |
