@@ -1,6 +1,6 @@
 # HTTP API contract v1
 
-Base URL `/api/v1`; UTF-8 JSON; provider-issued bearer identity in hosted environments; all hosted routes HTTPS; resource authorization always server-side. Local development uses an explicitly enabled fictional identity adapter and never accepts it in production. Typed Zod schemas in `packages/contracts`. Do not implement undocumented endpoints without contract update.
+Logical API base URL `/api/v1`; the approved host Nginx exposes it as `/workpilot/api/v1` and strips only the deployment prefix. UTF-8 JSON; provider-issued bearer identity in hosted environments; all hosted routes HTTPS; resource authorization always server-side. Local development uses an explicitly enabled fictional identity adapter and never accepts it in production. Typed Zod schemas in `packages/contracts`. Do not implement undocumented endpoints without contract update.
 
 Hosted sign-in and `NEW_PASSWORD_REQUIRED` completion are identity-provider operations, not PACD WorkPilot business endpoints. Shared contracts model the outcomes so the UI can switch from sign-in to password replacement without exposing passwords or challenge sessions to this API.
 

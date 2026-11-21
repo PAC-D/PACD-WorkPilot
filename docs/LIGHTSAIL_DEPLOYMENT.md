@@ -1,65 +1,122 @@
-# Lightsail deployment runbook
+# Shared Lightsail deployment runbook
 
-This is the approved small-installation path from ADR-0006. It creates no resources automatically. Complete the security, backup, restore, and smoke-test checklist before treating the deployment as production-ready.
+This is the approved <=10-user deployment from ADR-0006. WorkPilot shares the existing Mumbai Lightsail instance but remains isolated from separately managed Matalan and Primark projects. Complete the security, backup, restore, and smoke-test checklist before treating the deployment as production-ready.
 
-## 1. AWS prerequisites
+## Fixed deployment boundary
 
-Use the approved AWS region consistently for Lightsail, Cognito, and S3.
+- Repository: `/srv/pacd-projects/PACD-WorkPilot`
+- Public URL: `https://registration.pac-d.com/workpilot/`
+- Host upstream: `127.0.0.1:8080`
+- AWS region: `ap-south-1`
+- Docker project/network/volumes: `pacd-workpilot`
+- Existing host Nginx owns ports 80/443 and the Certbot certificate.
+- WorkPilot must not modify or restart Matalan/Primark directories, containers, routes, or services.
+- PostgreSQL and the Hono API are reachable only inside the WorkPilot Docker network.
 
-1. Create a Lightsail Linux instance with enough memory for Docker, PostgreSQL, the Node API, and image builds. Attach a static IP.
-2. Restrict SSH to the administrator's source IP. Open port 80 for the Lightsail distribution origin. Do not open 3000 or 5432.
-3. Create a Cognito user pool with public signup disabled, a public app client without a client secret, username/password sign-in, a seven-day temporary credential, and the documented 12-character password policy. Do not configure email or phone as a required attribute; email is optional profile data in this installation.
-4. Create a private S3 bucket with public access blocked, encryption enabled, and the existing upload CORS/metadata policy.
-5. Create a least-privilege runtime AWS credential that can perform only the application's Cognito administrator operations and required S3 object/metadata operations for these named resources.
+No second Lightsail instance, Lightsail distribution, new domain/certificate, RDS, Redis, SES, load balancer, ECR or CloudFront is required.
 
-## 2. Server configuration
+## 1. Before any server change
 
-Install Docker Engine with the Compose plugin, clone this repository to a dedicated application directory, then create the ignored environment file:
+1. Create a manual Lightsail snapshot and wait for it to become available.
+2. Record successful responses for the existing registration, Matalan and Primark URLs.
+3. Back up `/etc/nginx/sites-available/registration` to a dated root-owned file.
+4. Confirm port 8080 is unused and the server has sufficient disk/memory.
+5. Restrict SSH in both Lightsail IPv4 and IPv6 firewalls to administrator source addresses. Do not open 3000, 5432 or 8080.
+
+## 2. AWS prerequisites
+
+1. Create an `ap-south-1` Cognito User Pool using the Lite tier, with public signup disabled, a public app client without a client secret, username/password sign-in, seven-day temporary credentials, and the documented 12-character password policy. Do not require email or phone; email is optional profile data.
+2. Create a private `ap-south-1` S3 bucket with every Block Public Access control enabled, default encryption, versioning, and CORS limited to `https://registration.pac-d.com`.
+3. Create a least-privilege runtime AWS credential limited to the selected Cognito pool and S3 bucket. Never use root credentials or place credentials in git.
+
+## 3. Repository and environment
+
+Clone the public repository only into the PAC-D project boundary:
+
+```bash
+cd /srv/pacd-projects
+git clone https://github.com/PAC-D/PACD-WorkPilot.git
+cd PACD-WorkPilot
+```
+
+Create the ignored production environment:
 
 ```bash
 cp deploy/lightsail.env.example deploy/lightsail.env
 chmod 600 deploy/lightsail.env
 ```
 
-Replace every placeholder. Generate independent random values for `POSTGRES_PASSWORD` and `CURSOR_SECRET`. Set `WEB_ORIGIN` to the final HTTPS distribution address or custom domain. Never place the server environment file in git.
+Replace every placeholder. Generate independent random values for `POSTGRES_PASSWORD` and `CURSOR_SECRET`. `WEB_ORIGIN` is the origin only (`https://registration.pac-d.com`), without `/workpilot`. Never put the Super Admin temporary password in this file.
 
-Build, migrate, and start the stack:
+Validate the Compose model before starting anything:
 
 ```bash
-docker compose --env-file deploy/lightsail.env -f compose.production.yaml up -d --build
-docker compose --env-file deploy/lightsail.env -f compose.production.yaml ps
-docker compose --env-file deploy/lightsail.env -f compose.production.yaml logs --tail=100 api web migrate
+WORKPILOT_ENV_FILE=deploy/lightsail.env docker compose \
+  --env-file deploy/lightsail.env -f compose.production.yaml config
 ```
 
-Only Nginx is published on host port 80. PostgreSQL and the API stay inside the Compose network. The migration container must exit successfully before the API starts.
-
-## 3. Bootstrap the only initial Super Admin
-
-In Cognito, create the `BOOTSTRAP_SUPER_ADMIN_USERNAME` user with invitation delivery suppressed and set a strong one-time temporary password. Do not put that password in the environment file, shell history, repository, logs, or database. Copy the Cognito user's immutable `sub` into `BOOTSTRAP_SUPER_ADMIN_SUB`, then run:
+## 4. Start the isolated WorkPilot stack
 
 ```bash
-docker compose --env-file deploy/lightsail.env -f compose.production.yaml run --rm api \
+WORKPILOT_ENV_FILE=deploy/lightsail.env docker compose \
+  --env-file deploy/lightsail.env -f compose.production.yaml up -d --build
+
+WORKPILOT_ENV_FILE=deploy/lightsail.env docker compose \
+  --env-file deploy/lightsail.env -f compose.production.yaml ps
+
+WORKPILOT_ENV_FILE=deploy/lightsail.env docker compose \
+  --env-file deploy/lightsail.env -f compose.production.yaml logs --tail=100 api web migrate
+```
+
+The web container publishes only `127.0.0.1:8080`. The migration container must exit successfully before the API starts. Verify `http://127.0.0.1:8080/` from the host before changing Nginx.
+
+## 5. Add the existing Nginx path route
+
+Install the rate-limit zone and location snippet from `deploy/host-nginx/`. Add the location snippet only inside the existing `registration.pac-d.com` HTTPS server block, before its catch-all `location /` block.
+
+Before reload:
+
+```bash
+sudo nginx -t
+```
+
+If and only if validation succeeds:
+
+```bash
+sudo systemctl reload nginx
+```
+
+A reload is graceful; do not restart the server or unrelated containers. Verify the registration root, existing registration subpaths, Matalan and Primark URLs immediately, then verify `/workpilot/` and a deep link such as `/workpilot/dashboard`.
+
+## 6. Bootstrap the initial Super Admin
+
+In Cognito, create the `BOOTSTRAP_SUPER_ADMIN_USERNAME` user with invitation delivery suppressed and set a strong one-time temporary password. Do not put that password in the environment file, shell history, repository, logs, or database. Copy the immutable Cognito `sub` into `BOOTSTRAP_SUPER_ADMIN_SUB`, then run:
+
+```bash
+WORKPILOT_ENV_FILE=deploy/lightsail.env docker compose \
+  --env-file deploy/lightsail.env -f compose.production.yaml run --rm api \
   node --experimental-strip-types apps/api/src/db/bootstrap-super-admin.ts
 ```
 
-The command succeeds only when no Super Admin exists. Sign in through the application, replace the temporary password, and verify Users & Access and Audit. After this, the Super Admin creates all USER, ADMIN, or additional SUPER_ADMIN accounts in Users & Access, chooses a one-time password, and gives it to the user through an approved private channel. No email is sent.
+The command succeeds only when no Super Admin exists. Sign in, replace the temporary password, and verify Users & Access and Audit. The Super Admin then creates every other account and hands off one-time credentials through an approved private channel. No email is sent.
 
-## 4. HTTPS distribution
+## 7. Update and rollback
 
-Create a Lightsail distribution with the instance as its HTTP origin. Use the dynamic-content caching preset, allow `GET`, `HEAD`, `OPTIONS`, `PUT`, `PATCH`, and `POST`, and forward the `Authorization` and `Origin` headers. Configure `/api/*` as non-cacheable. Use the distribution's HTTPS address, a Lightsail web address, or attach a validated certificate for a custom domain. Rebuild the web image if the Cognito pool/client changes.
+Before an update, create a PostgreSQL logical backup. Keep the pre-deployment instance snapshot until WorkPilot and all existing sites have remained healthy for the agreed observation period. Pull only reviewed `main`, then rerun the same Compose `up -d --build` command.
 
-## 5. Update and rollback
+Migrations are checksum-verified and forward-only. Application rollback cannot silently reverse a schema migration. Keep the prior git revision/image until smoke tests pass.
 
-Before every update, take a database logical backup and an instance snapshot. Pull the reviewed revision, then rerun the same `docker compose ... up -d --build` command. Migrations are checksum-verified and forward-only; application rollback cannot silently reverse a schema migration. Keep the prior image/revision until smoke tests pass.
+If host Nginx validation or any existing-site smoke test fails, restore the backed-up registration configuration, run `sudo nginx -t`, gracefully reload Nginx, and stop only the `pacd-workpilot` Compose project.
 
-## 6. Required production evidence
+## 8. Required production evidence
 
-- Restore a PostgreSQL logical backup into a clean instance and record the result.
-- Enable automatic instance snapshots and a separate encrypted PostgreSQL backup with retention.
+- Restore a PostgreSQL logical backup into a clean database and record the result.
+- Enable automatic instance snapshots or document the manual snapshot schedule.
 - Verify Cognito public signup is off and account creation sends no email.
-- Verify the first Super Admin and all later users must replace the one-time password.
-- Confirm ports 3000 and 5432 are unreachable publicly.
-- Run `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, and the integration/smoke tests.
-- Configure budget, disk, memory, container restart, backup failure, and API error alerts.
+- Verify first login forces replacement of the one-time password.
+- Confirm 3000, 5432 and 8080 are unreachable publicly over IPv4 and IPv6.
+- Confirm `/workpilot/api/*` rate limiting returns HTTP 429 under sustained excess traffic.
+- Run `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, integration tests and deployed smoke tests.
+- Configure budget, disk, memory, container restart, backup failure and API error alerts.
 
-AWS references: [Cognito AdminCreateUser](https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_AdminCreateUser.html), [Lightsail distribution HTTPS](https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-faq-cdn-distributions.html), [Lightsail distribution caching](https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-changing-default-cache-behavior.html), and [Lightsail firewall](https://docs.aws.amazon.com/lightsail/latest/userguide/understanding-firewall-and-port-mappings-in-amazon-lightsail.html).
+AWS references: [Cognito AdminCreateUser](https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_AdminCreateUser.html), [S3 Block Public Access](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html), [Lightsail snapshots](https://docs.aws.amazon.com/lightsail/latest/userguide/understanding-snapshots-in-amazon-lightsail.html), and [Lightsail firewall](https://docs.aws.amazon.com/lightsail/latest/userguide/understanding-firewall-and-port-mappings-in-amazon-lightsail.html).

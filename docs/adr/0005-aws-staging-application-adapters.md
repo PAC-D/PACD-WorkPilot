@@ -3,7 +3,7 @@
 **Status:** Accepted by product owner | **Date:** 2026-11-10
 
 ## Decision
-Prepare the application for an AWS staging environment in `eu-north-1` without provisioning resources in this change. Use an invite-only Amazon Cognito User Pool for hosted identity and a private Amazon S3 bucket for hosted file content. Local PostgreSQL identity and metadata adapters remain available only in non-production development.
+Prepare the application for an AWS staging environment in `eu-north-1` without provisioning resources in this change. Use an invite-only Amazon Cognito User Pool for hosted identity and a private Amazon S3 bucket for hosted file content. Local PostgreSQL identity and metadata adapters remain available only in non-production development. ADR-0006 later overrides the hosted region with `ap-south-1`; the adapter decisions remain accepted.
 
 The React public client uses the modular AWS Amplify Auth APIs with a Cognito app client that has no client secret. The Hono API verifies Cognito access tokens with `aws-jwt-verify`, then reloads the active application profile and effective grants from PostgreSQL for every request. Cognito groups or browser claims never replace application authorization.
 

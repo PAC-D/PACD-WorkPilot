@@ -4,7 +4,7 @@ All changes require product-owner decision and, when technical choices change, a
 
 | Decision | Working default | Owner acceptance required |
 |---|---|---|
-| AWS staging region | `eu-north-1` (Europe/Stockholm) | Resolved 2026-11-10 |
+| Hosted AWS region | `ap-south-1` (Mumbai), matching the shared Lightsail instance | Resolved 2026-11-21; ADR-0006 overrides ADR-0005 region |
 | Hosted runtime/provider | Amazon Lightsail single instance with Docker Compose (ADR-0006) | Resolved 2026-11-20 |
 | Hosted PostgreSQL | PostgreSQL 16 on the Lightsail instance; restore-tested external logical backup required | Resolved 2026-11-20 |
 | Organization timezone | `Asia/Dhaka` | Confirm |
@@ -23,7 +23,7 @@ All changes require product-owner decision and, when technical choices change, a
 | Privileged MFA | Deferred for v1; password login with controls in ADR-0003 | Resolved 2026-11-09 |
 | Email delivery | No delivery integration; Cognito messages suppressed and Super Admin hands off a one-time credential privately | Resolved 2026-11-20 (ADR-0006) |
 | Dashboard period | Default last 30 days, max 12 months | Confirm |
-| CloudFront/custom domain | TBD | Yes |
+| Public route and TLS | Existing `https://registration.pac-d.com/workpilot/` through host Nginx/Certbot; no CloudFront or distribution | Resolved 2026-11-21 |
 | Employee identifier format | `emp-001` username example; actual format TBD | Yes |
 | Admin may amend others' submitted claims | Deny by default; explicit scoped permission/mandatory reason | Yes |
 | Financial mark-paid role | Explicit Super Admin grant only | Yes |

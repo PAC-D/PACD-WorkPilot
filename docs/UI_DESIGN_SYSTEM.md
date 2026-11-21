@@ -38,7 +38,7 @@ Motion tokens are also centralized in `packages/ui/src/tokens.css`. Use only sho
 ## Navigation
 User: Overview, My Work, Projects, Claims, Requests, Profile. Admin: Overview, People, Projects, Work, Claims, Requests, Reports. Super Admin additionally: Users & Access, Configuration, Audit. Hide inaccessible areas; direct URL should still receive 403/404.
 
-Canonical paths are `/dashboard`, `/work`, `/people`, `/projects`, `/claims`, `/requests`, `/reports`, `/admin`, `/settings`, `/admin/audit` and `/profile`. Use real anchors plus History API interception so links remain accessible, browser Back/Forward works and users can open authorized areas in a new tab. The CDN must support SPA document fallback for deep-link refreshes.
+Canonical internal paths are `/dashboard`, `/work`, `/people`, `/projects`, `/claims`, `/requests`, `/reports`, `/admin`, `/settings`, `/admin/audit` and `/profile`. Production prefixes them with `/workpilot`, while local development has no prefix. Use real anchors plus History API interception so links remain accessible, browser Back/Forward works and users can open authorized areas in a new tab. Host Nginx plus the web container must provide SPA document fallback for deep-link refreshes under `/workpilot/`.
 
 ## Admin dashboard mandatory widgets
 - 4 compact stat cards: Pending Claims, Pending Requests, Active Projects, Blocked Work.

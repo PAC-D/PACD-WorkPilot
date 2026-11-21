@@ -6,14 +6,17 @@ import { AppShell } from "./components/app-shell";
 import { authMode, hostedAuthClient } from "./features/auth/auth-client";
 import { HostedLoginPage, LoginPage } from "./features/auth/login-page";
 import { ApiError, apiClient } from "./lib/api-client";
+import { addBasePath, normalizeBasePath, stripBasePath } from "./lib/base-path";
 import { getNavigationPath, resolveRoute } from "./lib/navigation";
 import { DatabaseDashboard } from "./pages/database-dashboard";
 import { ActivitiesPage, AuditPage, ClaimsPage, ConfigurationPage, ProfilePage, ProjectsPage, RequestsPage, UsersPage } from "./pages/resource-pages";
 
 function allowed(principal:Principal,permission:Permission){return principal.permissions.includes(permission);}
+const deploymentBasePath = normalizeBasePath(import.meta.env.BASE_URL);
+const currentPath = () => stripBasePath(window.location.pathname, deploymentBasePath) ?? window.location.pathname;
 
 export function App() {
-  const [pathname,setPathname]=useState(() => window.location.pathname);
+  const [pathname,setPathname]=useState(currentPath);
   const [loginError,setLoginError]=useState<string|null>(null);
   const [authPending,setAuthPending]=useState(false);
   const [needsNewPassword,setNeedsNewPassword]=useState(false);
@@ -23,21 +26,22 @@ export function App() {
   const identities=useQuery({queryKey:["local-identities"],queryFn:apiClient.listIdentities,enabled:authMode==="local"&&signedOut,retry:false});
 
   useEffect(() => {
-    const updatePath = () => setPathname(window.location.pathname);
+    const updatePath = () => setPathname(currentPath());
     window.addEventListener("popstate", updatePath);
     return () => window.removeEventListener("popstate", updatePath);
   }, []);
 
   function navigate(path: string, replace = false) {
-    if (window.location.pathname === path) return;
-    window.history[replace ? "replaceState" : "pushState"]({}, "", path);
+    const browserPath = addBasePath(path, deploymentBasePath);
+    if (window.location.pathname === browserPath) return;
+    window.history[replace ? "replaceState" : "pushState"]({}, "", browserPath);
     setPathname(path);
   }
 
   const routeResolution=principalQuery.data?resolveRoute(pathname,principalQuery.data):null;
   useEffect(() => {
     if(routeResolution?.kind!=="redirect")return;
-    window.history.replaceState({},"",routeResolution.path);
+    window.history.replaceState({},"",addBasePath(routeResolution.path, deploymentBasePath));
     setPathname(routeResolution.path);
   },[routeResolution]);
 
@@ -63,7 +67,7 @@ export function App() {
 }
 
 function RouteMessage({code,description,title}:{code:string;description:string;title:string}){
-  return <section className="mx-auto max-w-2xl rounded-xl border border-[var(--border)] bg-white p-8 text-center"><p className="type-overline text-[var(--navy-500)]">{code}</p><h1 className="type-page-title mt-2 text-[var(--navy-900)]">{title}</h1><p className="type-body mt-3 text-[var(--muted)]">{description}</p><a className="mt-6 inline-flex min-h-10 items-center rounded-lg bg-[var(--navy-700)] px-4 type-label text-white hover:bg-[var(--navy-800)]" href="/dashboard">Return to dashboard</a></section>;
+  return <section className="mx-auto max-w-2xl rounded-xl border border-[var(--border)] bg-white p-8 text-center"><p className="type-overline text-[var(--navy-500)]">{code}</p><h1 className="type-page-title mt-2 text-[var(--navy-900)]">{title}</h1><p className="type-body mt-3 text-[var(--muted)]">{description}</p><a className="mt-6 inline-flex min-h-10 items-center rounded-lg bg-[var(--navy-700)] px-4 type-label text-white hover:bg-[var(--navy-800)]" href={addBasePath("/dashboard", deploymentBasePath)}>Return to dashboard</a></section>;
 }
 
 function Route({activePage,principal}:{activePage:string;principal:Principal}){

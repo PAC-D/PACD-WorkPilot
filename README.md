@@ -1,9 +1,9 @@
 # PACD WorkPilot | Internal Work and Employee Operations
 
 > **Status:** Local-first application with an approved single-instance Lightsail deployment profile. AWS resources are not provisioned by this repository.
-> **Version:** 1.0.0 | **Updated:** 2026-11-10 | **Audience:** product owners, developers, coding agents and operations.
+> **Version:** 1.0.0 | **Updated:** 2026-11-21 | **Audience:** product owners, developers, coding agents and operations.
 
-A small internal application for **at most 30 active employee accounts**. It supports work updates, project allocations, monthly expense claims, internal requests, and management reporting. Three user-facing roles: **USER, ADMIN, SUPER_ADMIN**. Role labels do not grant blanket privileges: effective access comes from explicit policy and scope.
+A small internal application for **at most 10 active employee accounts**. It supports work updates, project allocations, monthly expense claims, internal requests, and management reporting. Three user-facing roles: **USER, ADMIN, SUPER_ADMIN**. Role labels do not grant blanket privileges: effective access comes from explicit policy and scope.
 
 ## Start here
 1. Read [AGENTS.md](AGENTS.md), [product requirements](docs/PRD.md), [architecture](docs/ARCHITECTURE.md), [security and RBAC](docs/SECURITY_RBAC.md) **before changing code**.
@@ -20,9 +20,9 @@ A small internal application for **at most 30 active employee accounts**. It sup
 | UI | Tailwind CSS + shadcn/ui (Radix primitives), Lucide icons, Recharts |
 | Data fetching | TanStack Query; typed fetch client; Zod validation |
 | Forms | React Hook Form + Zod |
-| Backend | Node.js TypeScript, Hono HTTP API; local Node runtime, AWS-hosted runtime selected during deployment |
-| API entry | Local Hono server; hosted gateway selected during deployment |
-| Database | Portable PostgreSQL 16+, local through Docker Compose |
+| Backend | Node.js TypeScript, Hono HTTP API; Node container on the shared Lightsail instance in production |
+| API entry | Local Hono server; existing host Nginx at `/workpilot/api/` in production |
+| Database | Portable PostgreSQL 16+; Docker Compose locally and an isolated WorkPilot volume on Lightsail |
 | Login | Development-only database-backed identity selector locally; Cognito adapter in hosted mode |
 | File storage | Private S3 presigned upload/download adapter in hosted mode |
 | Live invalidation | Provider adapter: event hint only, then targeted TanStack Query invalidation |
@@ -32,7 +32,7 @@ A small internal application for **at most 30 active employee accounts**. It sup
 | Logging | Structured JSON with correlation IDs and redacted PII |
 | No now | Redis, Supabase platform, Firebase, Prisma, cron polling, SSR, Next.js, microservices, GraphQL business API |
 
-**Deployment constraint:** local development incurs no cloud cost. ADR-0006 approves the Lightsail topology and manual credential handoff; region, backup retention, restore evidence, instance size and budget still require operational confirmation before launch.
+**Deployment constraint:** local development incurs no cloud cost. ADR-0006 approves the shared Mumbai Lightsail topology, the existing `registration.pac-d.com` TLS endpoint, `/workpilot/` path routing and manual credential handoff. Backup retention and restore evidence still require operational confirmation before launch.
 
 ## User journeys
 - **User** selects assigned projects, logs or revises activity, uploads expenses by billing month, submits requests, and tracks status.
@@ -68,7 +68,7 @@ Use `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:integration`, and `pn
 
 The local frontend is connected to the Hono API and PostgreSQL for identity profiles, dashboard aggregates, users, departments, projects, assignments, work activities, claims, requests and audit records. Hosted mode uses Cognito with suppressed delivery and a Super Admin-supplied one-time password, API JWT verification and private S3 claim attachments. All business writes use the API; the browser never connects to PostgreSQL and never receives AWS credentials. Recovery, hosted event delivery and advanced workflow screens remain follow-up work. See [frontend to backend handoff](docs/FRONTEND_BACKEND_HANDOFF.md) and the [Lightsail runbook](docs/LIGHTSAIL_DEPLOYMENT.md).
 
-Authenticated browser navigation uses canonical SPA routes: `/dashboard`, `/work`, `/people`, `/projects`, `/claims`, `/requests`, `/reports`, `/admin`, `/settings`, `/admin/audit` and `/profile`. Navigation visibility follows the effective principal, and direct inaccessible routes show an access-denied state. Hosted static delivery must rewrite unknown document requests to `index.html` so refreshing a deep link continues to work.
+Authenticated browser navigation uses canonical internal SPA routes: `/dashboard`, `/work`, `/people`, `/projects`, `/claims`, `/requests`, `/reports`, `/admin`, `/settings`, `/admin/audit` and `/profile`. The production browser prefix is `/workpilot`, for example `/workpilot/dashboard`. Navigation visibility follows the effective principal, and direct inaccessible routes show an access-denied state. Hosted static delivery must rewrite unknown WorkPilot document requests to `index.html` so refreshing a deep link continues to work.
 
 Shared color, typography, and motion tokens live in `packages/ui/src/tokens.css`. Repository branding is sourced from `assets/logo_left.png` and `assets/favicon.png`; Vite serves that directory directly in development and copies the assets into production builds.
 
@@ -87,10 +87,7 @@ contracts/                 Versioned JSON schemas/examples
 ## Delivery criteria
 Complete all acceptance tests, a threat-model review, accessibility checks, a cost review, backup/restore demonstration, and a Super Admin handover checklist before production. See `docs/TESTING_ACCEPTANCE.md`.
 
-## AWS candidate references (verify only if AWS is approved)
+## Hosted-service references
 - Cognito admin-create-user: https://docs.aws.amazon.com/cognito/latest/developerguide/how-to-create-user-accounts.html
 - AWS Cognito pricing: https://aws.amazon.com/cognito/pricing/
-- AWS AppSync Events pricing: https://aws.amazon.com/appsync/pricing/
-- API Gateway pricing: https://aws.amazon.com/api-gateway/pricing/
-- Aurora PostgreSQL pricing candidate: https://aws.amazon.com/rds/aurora/pricing/
-- Lambda pricing: https://aws.amazon.com/lambda/pricing/
+- S3 pricing: https://aws.amazon.com/s3/pricing/

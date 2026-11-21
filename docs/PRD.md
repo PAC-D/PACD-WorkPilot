@@ -1,6 +1,6 @@
 # Product Requirements Document (PRD)
 
-**Product:** PACD WorkPilot | **Version:** 1.0 | **Population:** <=30 active accounts | **Status:** v1 baseline
+**Product:** PACD WorkPilot | **Version:** 1.0 | **Population:** <=10 active accounts | **Status:** v1 baseline
 
 ## Outcome
 An employee can submit a work update, expense receipt or request in under 60 seconds after opening its form (excluding file transfer). An authorized administrator sees changes promptly **without recurring fetch timers**. The interface must be understandable to non-technical employees on desktop and phone.
@@ -45,7 +45,7 @@ Page-based navigation, clear action verbs, shared table/filter/search/date/month
 Payroll, attendance biometrics, employee rating, invoice accounting ERP, automatic expense settlement, AI summaries, public portal, arbitrary custom fields with code execution, multi-organization SaaS, HR legislation compliance claims, advanced leave accrual, mobile native app.
 
 ## Non-functional requirements
-Target <=30 accounts, responsive dashboard; initial app load under 3s on typical office broadband after static files cached (target, measure in UAT); median ordinary API under 500ms warm (target only); authorized updates normally reflected within 5s while clients connected (best-effort, no delivery guarantee). Zero scheduled polling; one-time reconnect/focus reconciliation. WCAG 2.2 AA-minded design; auditability; secure uploads; restore testing. No claims of guaranteed SLAs without measured evidence.
+Target <=10 accounts, responsive dashboard; initial app load under 3s on typical office broadband after static files cached (target, measure in UAT); median ordinary API under 500ms warm (target only); authorized updates normally reflected within 5s while clients connected (best-effort, no delivery guarantee). Zero scheduled polling; one-time reconnect/focus reconciliation. WCAG 2.2 AA-minded design; auditability; secure uploads; restore testing. No claims of guaranteed SLAs without measured evidence.
 
 ## Acceptance examples
 1. USER creates claim for October on November 9; October report shows it.

@@ -23,6 +23,7 @@
 13. Unknown/expired upload presign cannot yield readable shared file; authorization on every download.
 14. Simulate outage: DB throttling, event publisher failure, stale token, partial S3 upload and recovery.
 15. Hosted auth tests cover invalid/missing bearer tokens, disabled/missing PostgreSQL profiles, temporary-password replacement and invitation failure without exposing credentials.
+16. Production build assets, History API navigation, deep-link refreshes and API calls remain under `/workpilot/`; `/workpilot/api/*` is rate-limited while unrelated registration routes remain unchanged.
 16. File tests cover other-user claims, non-editable claims, oversized/disallowed files, mismatched S3 metadata, unfinalized downloads and scoped-reader access.
 
 ## Release gates

@@ -1,6 +1,6 @@
 # Frontend to backend integration handoff
 
-**Status:** The local React frontend is connected to the Hono API and PostgreSQL. Local identity uses fictional profiles and no passwords. Hosted Cognito sign-in, forced password replacement, JWT verification, invitation provisioning and private S3 claim uploads are implemented behind configuration, but AWS resources are not provisioned. This document tracks remaining production and hosted-adapter work; it is not a new API contract.
+**Status:** The local React frontend is connected to the Hono API and PostgreSQL. Local identity uses fictional profiles and no passwords. Hosted Cognito sign-in, forced password replacement, JWT verification, suppressed-delivery provisioning, private S3 claim uploads, and `/workpilot/` path hosting are implemented behind configuration, but AWS resources are not provisioned. This document tracks remaining production and hosted-adapter work; it is not a new API contract.
 
 ## Implemented local boundary
 

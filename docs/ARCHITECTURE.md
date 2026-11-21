@@ -3,7 +3,7 @@
 ## Runtime profiles
 Local development: Browser -> Vite SPA -> Hono Node server -> local PostgreSQL. Identity, files and event delivery use explicit development adapters with fictional data only.
 
-Hosted deployment follows ADR-0006: Lightsail distribution -> Nginx on one Lightsail instance -> compiled SPA or Hono API -> instance PostgreSQL/private S3/Cognito. AWS staging uses `eu-north-1`, Cognito identity and private S3 files under ADR-0005. PostgreSQL remains portable, but the approved initial hosted topology is the single Lightsail instance.
+Hosted deployment follows ADR-0006: `registration.pac-d.com/workpilot/` -> existing host Nginx -> loopback-only WorkPilot web container -> Hono API -> private Docker PostgreSQL/private S3/Cognito. The approved hosted region is `ap-south-1`; this overrides ADR-0005's earlier staging-region choice. No Lightsail distribution, load balancer, RDS, Redis, SES, ECR or CloudFront is part of the WorkPilot deployment.
 
 The SPA owns canonical browser routes and uses the History API without a routing dependency. Static hosting must return `index.html` for application document routes while continuing to serve real assets and API requests normally. Route visibility is derived from the authenticated principal, but server authorization remains authoritative.
 
@@ -39,7 +39,7 @@ infra/                       hosted infrastructure after deployment approval
 6. Reconnect and focus events reconcile active views once. No polling every N seconds.
 
 ## Dashboard aggregations
-At 30 employees, bounded indexed aggregate queries over fixed date ranges are acceptable. Add materialized summary tables only after measurements justify them. Charts default to 30 days and cap at 12 months. Do not query all historical data for every view.
+At 10 employees, bounded indexed aggregate queries over fixed date ranges are acceptable. Add materialized summary tables only after measurements justify them. Charts default to 30 days and cap at 12 months. Do not query all historical data for every view.
 
 ## Architectural rules
 - Frontend never trusts role stored in local storage; server always authorizes.
