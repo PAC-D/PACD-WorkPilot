@@ -57,8 +57,8 @@ type StatusTone = "neutral" | "info" | "success" | "warning" | "danger";
 
 const statusStyles: Record<StatusTone, string> = {
   danger: "bg-red-50 text-[var(--danger)] ring-red-100",
-  info: "bg-[var(--navy-100)] text-[var(--navy-800)] ring-blue-100",
-  neutral: "bg-slate-100 text-slate-700 ring-slate-200",
+  info: "bg-[var(--navy-100)] text-[var(--navy-800)] ring-[var(--border)]",
+  neutral: "bg-[var(--canvas)] text-[var(--muted)] ring-[var(--border)]",
   success: "bg-emerald-50 text-[var(--success)] ring-emerald-100",
   warning: "bg-amber-50 text-[var(--warning)] ring-amber-100",
 };
@@ -148,11 +148,11 @@ export function Pagination({
   );
 }
 
-export function IconButton({ label, children, ...props }: PropsWithChildren<ButtonHTMLAttributes<HTMLButtonElement> & { label: string }>) {
+export function IconButton({ label, children, className = "", ...props }: PropsWithChildren<ButtonHTMLAttributes<HTMLButtonElement> & { label: string }>) {
   return (
     <button
       aria-label={label}
-      className="interactive-control inline-flex size-10 items-center justify-center rounded-lg border border-[var(--border)] bg-white text-[var(--navy-900)] hover:bg-[var(--navy-100)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--navy-500)]"
+      className={`interactive-control inline-flex size-10 items-center justify-center rounded-lg border border-[var(--border)] bg-white text-[var(--navy-900)] hover:bg-[var(--navy-100)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--navy-500)] ${className}`}
       type="button"
       {...props}
     >

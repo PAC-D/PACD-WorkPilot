@@ -21,10 +21,10 @@ const admin: Principal = {
   role: "ADMIN",
 };
 
-test("scoped Admin sees reporting areas but no Super Admin areas", () => {
+test("scoped Admin sees no duplicate reports or Super Admin areas", () => {
   const ids = getNavigation(admin).map((item) => item.id);
 
-  assert.equal(ids.includes("reports"), true);
+  assert.equal(ids.includes("reports"), false);
   assert.equal(ids.includes("users-access"), false);
   assert.equal(ids.includes("configuration"), false);
   assert.equal(ids.includes("audit"), false);
@@ -42,7 +42,7 @@ test("navigation uses stable production-style paths", () => {
 });
 
 test("direct routes enforce role and permission visibility", () => {
-  assert.deepEqual(resolveRoute("/reports", admin), { kind: "allowed", pageId: "reports" });
+  assert.deepEqual(resolveRoute("/reports", admin), { kind: "not-found" });
   assert.deepEqual(resolveRoute("/admin", admin), { kind: "forbidden" });
   assert.deepEqual(resolveRoute("/settings", admin), { kind: "forbidden" });
   assert.deepEqual(resolveRoute("/missing", admin), { kind: "not-found" });

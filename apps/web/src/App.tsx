@@ -53,7 +53,7 @@ export function App() {
   if(principalQuery.isPending)return <div className="grid min-h-screen place-items-center type-body text-[var(--muted)]">Connecting to PACD WorkPilot...</div>;
   const connectionError=!signedOut&&principalQuery.error instanceof Error?principalQuery.error.message:null;
   if(!principalQuery.data){
-    if(authMode==="cognito")return <HostedLoginPage error={loginError??connectionError} isPending={authPending} needsNewPassword={needsNewPassword} onCompleteNewPassword={input=>void completeNewPassword(input)} onSignIn={input=>void signInHosted(input)}/>;
+    if(authMode==="cognito"||authMode==="preview")return <HostedLoginPage error={loginError??connectionError} isPending={authPending} needsNewPassword={needsNewPassword} onCompleteNewPassword={input=>void completeNewPassword(input)} onSignIn={input=>void signInHosted(input)}/>;
     return <LoginPage error={loginError??connectionError??(identities.error instanceof Error?identities.error.message:null)} identities={identities.data??[]} isLoading={signedOut&&identities.isPending} onRetry={()=>{setLoginError(null);void principalQuery.refetch();}} onSignIn={id=>void signIn(id)}/>;
   }
   const principal=principalQuery.data;
@@ -72,7 +72,7 @@ function RouteMessage({code,description,title}:{code:string;description:string;t
 
 function Route({activePage,principal}:{activePage:string;principal:Principal}){
   switch(activePage){
-    case "overview": case "reports": return <DatabaseDashboard principal={principal}/>;
+    case "overview": return <DatabaseDashboard principal={principal}/>;
     case "people": return <UsersPage canCreate={false}/>;
     case "users-access": return <UsersPage canCreate={allowed(principal,"users.manage")}/>;
     case "projects": return <ProjectsPage canCreate={allowed(principal,"projects.manage")}/>;

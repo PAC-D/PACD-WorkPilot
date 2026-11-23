@@ -13,17 +13,17 @@ import {
   YAxis,
 } from "recharts";
 
-export function WorkTrendChart({ data, description }: { data: ReadonlyArray<{completed:number;day:string;updates:number}>; description:string }) {
+export function WorkTrendChart({ data }: { data: ReadonlyArray<{completed:number;day:string;updates:number}> }) {
   return (
     <Card className="min-w-0">
-      <CardHeader description={description} title="Work updates" />
+      <CardHeader title="Work updates" />
       <div aria-label="Bar chart of work updates and completed items for the last seven days" className="h-72 px-2 py-4" role="img">
         <ResponsiveContainer height="100%" width="100%">
           <BarChart data={data} margin={{ bottom: 4, left: -18, right: 8, top: 4 }}>
-            <CartesianGrid stroke="#E1E7EF" strokeDasharray="3 3" vertical={false} />
+            <CartesianGrid stroke="#E0E7EF" strokeDasharray="3 3" vertical={false} />
             <XAxis axisLine={false} dataKey="day" fontSize={12} tickLine={false} />
             <YAxis allowDecimals={false} axisLine={false} fontSize={12} tickLine={false} />
-            <Tooltip cursor={{ fill: "#F7F9FC" }} />
+            <Tooltip cursor={{ fill: "#FFFFFF" }} />
             <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
             <Bar dataKey="updates" fill="#1B4877" name="Updates" radius={[4, 4, 0, 0]} />
             <Bar dataKey="completed" fill="#4071A4" name="Completed" radius={[4, 4, 0, 0]} />
@@ -50,12 +50,11 @@ export function WorkTrendChart({ data, description }: { data: ReadonlyArray<{com
 }
 
 export function ProjectMixChart({ data }: { data: ReadonlyArray<{count:number;name:string}> }) {
-  const total = data.reduce((sum, item) => sum + item.count, 0);
-  const colors=["#1B4877","#4071A4","#94A3B8","#207653","#64748B"];
+  const colors=["#071A33","#1B4877","#4071A4","#8AA8C4","#CBD8E5"];
 
   return (
     <Card className="min-w-0">
-      <CardHeader description={`${total} projects in authorized scope`} title="Project status" />
+      <CardHeader title="Project status" />
       <div aria-label="Donut chart of projects grouped by status" className="h-72 px-2 py-4" role="img">
         <ResponsiveContainer height="100%" width="100%">
           <PieChart>

@@ -16,7 +16,6 @@ const navigation: ReadonlyArray<NavigationItem> = [
   { id: "work", label: "Work", path: "/work", permission: "work.read.scope", roles: ["ADMIN", "SUPER_ADMIN"] },
   { id: "claims", label: "Claims", path: "/claims", roles: ["USER", "ADMIN", "SUPER_ADMIN"] },
   { id: "requests", label: "Requests", path: "/requests", roles: ["USER", "ADMIN", "SUPER_ADMIN"] },
-  { id: "reports", label: "Reports", path: "/reports", permission: "dashboard.read.scope", roles: ["ADMIN", "SUPER_ADMIN"] },
   { id: "users-access", label: "Users & Access", path: "/admin", permission: "users.manage", roles: ["SUPER_ADMIN"] },
   { id: "configuration", label: "Configuration", path: "/settings", permission: "settings.manage", roles: ["SUPER_ADMIN"] },
   { id: "audit", label: "Audit", path: "/admin/audit", permission: "audit.read", roles: ["SUPER_ADMIN"] },

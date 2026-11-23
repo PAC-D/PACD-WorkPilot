@@ -32,6 +32,18 @@ Then open `http://127.0.0.1:5173`. The web process and API process remain visibl
 
 The seed contains only `Local Super Admin` with username `superadmin` and profile email `superadmin@pacd`. It stores and accepts no password. Additional fictional profiles created from **Users & Access** become selectable local identities. The local identity adapter is enabled only by `LOCAL_AUTH_ENABLED=true` and configuration rejects it when `NODE_ENV=production`.
 
+## Frontend-only UI preview
+
+When working only on layout and interaction, the SPA can run without PostgreSQL or the API. Add `VITE_UI_PREVIEW=true` to the untracked `.env` file, then run:
+
+```bash
+pnpm dev:web
+```
+
+Open `http://127.0.0.1:5173`. Enter any non-empty username and password to open a Super Admin UI backed by fictional in-memory fixtures. A username containing `new` opens the first-login password replacement screen. The administrator-only **Users & Access** form represents account provisioning; public self-signup remains intentionally unavailable.
+
+Preview mutations last only until the page is refreshed. No request is sent to the API, and the production build rejects an enabled preview flag. Remove `VITE_UI_PREVIEW` (or set it to `false`) to restore the normal configured authentication and API behavior.
+
 ## Check the API directly
 
 With `pnpm dev` running, these commands verify the identity boundary:

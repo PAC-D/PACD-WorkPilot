@@ -8,6 +8,7 @@ import {
 import { z } from "zod";
 
 import { authMode, hostedAuthClient } from "../features/auth/auth-client";
+import { previewRequest, uiPreviewEnabled } from "./ui-preview";
 
 const apiBase = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:3000/api/v1";
 const identityKey = "workpilot.localIdentity";
@@ -18,6 +19,12 @@ export class ApiError extends Error { readonly status:number; constructor(status
 function localIdentity(): string | null { return sessionStorage.getItem(identityKey); }
 
 async function request(path: string, init: RequestInit = {}) {
+  if (uiPreviewEnabled) {
+    const result = await previewRequest(path, init);
+    const previewError = z.object({ __previewError: z.object({ message: z.string(), status: z.number() }) }).safeParse(result);
+    if (previewError.success) throw new ApiError(previewError.data.__previewError.status, previewError.data.__previewError.message);
+    return result;
+  }
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
   if (init.body) headers.set("Content-Type", "application/json");

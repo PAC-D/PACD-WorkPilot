@@ -1,10 +1,12 @@
 import type { CompleteNewPasswordInput, SignInInput, SignInOutcome } from "@pacd/contracts";
 import { z } from "zod";
 
-const authModeSchema = z.enum(["local", "cognito"]);
+import { previewSignIn, previewSignOut, uiPreviewEnabled } from "../../lib/ui-preview";
+
+const authModeSchema = z.enum(["local", "cognito", "preview"]);
 export type AuthMode = z.infer<typeof authModeSchema>;
 
-export const authMode = authModeSchema.parse(import.meta.env.VITE_AUTH_MODE ?? "local");
+export const authMode = uiPreviewEnabled ? "preview" : authModeSchema.parse(import.meta.env.VITE_AUTH_MODE ?? "local");
 let configured = false;
 
 async function configureCognito() {
@@ -50,6 +52,7 @@ export const hostedAuthClient = {
     }
   },
   async completeNewPassword(input: CompleteNewPasswordInput): Promise<void> {
+    if (authMode === "preview") { previewSignIn(); return; }
     await configureCognito();
     const { confirmSignIn } = await import("aws-amplify/auth");
     try {
@@ -60,6 +63,11 @@ export const hostedAuthClient = {
     }
   },
   async signIn(input: SignInInput): Promise<SignInOutcome> {
+    if (authMode === "preview") {
+      if (input.username.toLowerCase().includes("new")) return { status: "NEW_PASSWORD_REQUIRED" };
+      previewSignIn();
+      return { status: "SIGNED_IN" };
+    }
     await configureCognito();
     const { signIn } = await import("aws-amplify/auth");
     try {
@@ -74,6 +82,7 @@ export const hostedAuthClient = {
     }
   },
   async signOut(): Promise<void> {
+    if (authMode === "preview") { previewSignOut(); return; }
     if (authMode !== "cognito") return;
     await configureCognito();
     const { signOut } = await import("aws-amplify/auth");

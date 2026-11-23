@@ -1,5 +1,5 @@
 import { completeNewPasswordInputSchema, signInInputSchema, type CompleteNewPasswordInput, type SignInInput } from "@pacd/contracts";
-import { ArrowRight, FileCheck2, FolderKanban, RefreshCw, ShieldCheck } from "lucide-react";
+import { Activity, ArrowRight, CheckCircle2, Eye, EyeOff, FolderKanban, ReceiptText, RefreshCw } from "lucide-react";
 import { useState, type FormEvent, type ReactNode } from "react";
 
 export interface LocalIdentity {
@@ -21,30 +21,14 @@ export function LoginPage({ error, identities, isLoading, onRetry, onSignIn }: {
     <main className="login-page min-h-screen bg-[var(--navy-950)]">
       <div className="login-orbit login-orbit-one" aria-hidden="true" />
       <div className="login-orbit login-orbit-two" aria-hidden="true" />
-      <section className="login-story" aria-labelledby="login-story-title">
-        <img alt="PACD" className="login-brand" src="/logo_left.png" />
-        <div className="login-story-copy">
-          <p className="type-overline text-blue-100/65">PACD WorkPilot</p>
-          <h1 className="login-title" id="login-story-title">Work stays clear when everything is connected.</h1>
-          <p className="login-intro">Keep project updates, requests, and claims in one focused workspace built for the way your team works.</p>
-        </div>
-        <div className="login-flow" aria-label="WorkPilot capabilities">
-          <article className="login-flow-item"><span className="login-flow-icon"><FolderKanban aria-hidden="true" size={18} /></span><span><strong>Plan work</strong><small>Projects and activity</small></span></article>
-          <span className="login-flow-line" aria-hidden="true" />
-          <article className="login-flow-item"><span className="login-flow-icon"><FileCheck2 aria-hidden="true" size={18} /></span><span><strong>Review clearly</strong><small>Claims and requests</small></span></article>
-          <span className="login-flow-line" aria-hidden="true" />
-          <article className="login-flow-item"><span className="login-flow-icon"><ShieldCheck aria-hidden="true" size={18} /></span><span><strong>Stay accountable</strong><small>Permissions and audit</small></span></article>
-        </div>
-      </section>
+      <AuthStory />
       <section className="login-panel" aria-labelledby="sign-in-title">
         <div className="login-card">
           <div>
-            <p className="type-overline text-[var(--navy-500)]">Local development</p>
-            <h2 className="login-card-title" id="sign-in-title">PACD WorkPilot</h2>
-            <p className="type-body mt-2 text-[var(--muted)]">Choose a database-backed fictional identity. This local adapter is disabled in production.</p>
+            <h2 className="login-card-title" id="sign-in-title">Sign in</h2>
           </div>
           <div className="mt-8 space-y-3">
-            {isLoading ? <p className="type-body text-[var(--muted)]">Loading local identities...</p> : null}
+            {isLoading ? <p className="login-hint type-body">Loading local identities...</p> : null}
             {error ? <><p className="login-error" role="alert">{error}</p><button className="login-submit" onClick={onRetry} type="button"><span>Retry connection</span><RefreshCw aria-hidden="true" size={18} /></button></> : null}
             {identities.map((identity) => (
               <button className="login-submit" key={identity.id} onClick={() => onSignIn(identity.id)} type="button">
@@ -53,9 +37,8 @@ export function LoginPage({ error, identities, isLoading, onRetry, onSignIn }: {
             ))}
             {!isLoading && !error && identities.length === 0 ? <p className="login-error">No local identity exists. Run the database seed command.</p> : null}
           </div>
-          <div className="login-help"><p>Local development access only</p><p>No password is stored or accepted by PACD WorkPilot.</p></div>
         </div>
-        <p className="type-caption mt-5 text-center text-blue-100/60">Authorized PACD personnel only</p>
+        <p className="login-authorization type-caption text-center">Authorized PACD personnel only</p>
       </section>
     </main>
   );
@@ -69,6 +52,9 @@ export function HostedLoginPage({ error, isPending, needsNewPassword, onComplete
   onSignIn: (input: SignInInput) => void;
 }) {
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [newPasswordVisible, setNewPasswordVisible] = useState(false);
+  const [confirmationVisible, setConfirmationVisible] = useState(false);
 
   function submitSignIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -90,30 +76,72 @@ export function HostedLoginPage({ error, isPending, needsNewPassword, onComplete
 
   return <AuthLayout>
     <div>
-      <p className="type-overline text-[var(--navy-500)]">Secure workspace</p>
       <h2 className="login-card-title" id="sign-in-title">{needsNewPassword ? "Create your password" : "Sign in"}</h2>
-      <p className="type-body mt-2 text-[var(--muted)]">{needsNewPassword ? "Replace the temporary password before continuing." : "Use the username and temporary or permanent password given to you by an administrator."}</p>
     </div>
-    {needsNewPassword ? <form className="mt-8 space-y-4" onSubmit={submitNewPassword}>
-      <label className="login-label">New password<input autoComplete="new-password" className="login-input" name="newPassword" required type="password"/></label>
-      <label className="login-label">Confirm new password<input autoComplete="new-password" className="login-input" name="confirmPassword" required type="password"/></label>
-      <p className="type-caption text-[var(--muted)]">At least 12 characters with uppercase, lowercase, number and special character.</p>
+    {needsNewPassword ? <form className="login-form" onSubmit={submitNewPassword}>
+      <PasswordField autoComplete="new-password" label="New password" name="newPassword" onToggle={() => setNewPasswordVisible((visible) => !visible)} visible={newPasswordVisible}/>
+      <PasswordField autoComplete="new-password" label="Confirm new password" name="confirmPassword" onToggle={() => setConfirmationVisible((visible) => !visible)} visible={confirmationVisible}/>
+      <p className="login-hint type-caption">At least 12 characters with uppercase, lowercase, number and special character.</p>
       {validationError || error ? <p className="login-error" role="alert">{validationError ?? error}</p> : null}
       <button className="login-submit" disabled={isPending} type="submit"><span>{isPending ? "Updating..." : "Set password and continue"}</span><ArrowRight aria-hidden="true" size={18}/></button>
-    </form> : <form className="mt-8 space-y-4" onSubmit={submitSignIn}>
+    </form> : <form className="login-form" onSubmit={submitSignIn}>
       <label className="login-label">Username<input autoComplete="username" className="login-input" name="username" required/></label>
-      <label className="login-label">Password<input autoComplete="current-password" className="login-input" name="password" required type="password"/></label>
+      <PasswordField autoComplete="current-password" label="Password" name="password" onToggle={() => setPasswordVisible((visible) => !visible)} visible={passwordVisible}/>
       {validationError || error ? <p className="login-error" role="alert">{validationError ?? error}</p> : null}
       <button className="login-submit" disabled={isPending} type="submit"><span>{isPending ? "Signing in..." : "Sign in"}</span><ArrowRight aria-hidden="true" size={18}/></button>
     </form>}
-    <div className="login-help"><p>Administrator-created access only</p><p>PACD WorkPilot never stores your password.</p></div>
   </AuthLayout>;
+}
+
+function PasswordField({ autoComplete, label, name, onToggle, visible }: {
+  autoComplete: "current-password" | "new-password";
+  label: string;
+  name: string;
+  onToggle: () => void;
+  visible: boolean;
+}) {
+  return <label className="login-label">
+    <span>{label}</span>
+    <span className="login-input-wrap">
+      <input autoComplete={autoComplete} className="login-input login-password-input" name={name} required type={visible ? "text" : "password"}/>
+      <button aria-label={`${visible ? "Hide" : "Show"} ${label.toLowerCase()}`} aria-pressed={visible} className="login-password-toggle" onClick={onToggle} type="button">
+        {visible ? <EyeOff aria-hidden="true" size={18}/> : <Eye aria-hidden="true" size={18}/>}
+      </button>
+    </span>
+  </label>;
+}
+
+function AuthStory() {
+  const steps = [
+    { icon: <FolderKanban aria-hidden="true" size={19}/>, label: "Projects" },
+    { icon: <Activity aria-hidden="true" size={19}/>, label: "Work updates" },
+    { icon: <ReceiptText aria-hidden="true" size={19}/>, label: "Claims / requests" },
+    { icon: <CheckCircle2 aria-hidden="true" size={19}/>, label: "Review" },
+  ];
+
+  return <section className="login-story" aria-labelledby="login-story-title">
+    <div className="login-brand-frame"><img alt="PACD" className="login-brand" src="/logo_left.png" /></div>
+    <div className="login-story-copy">
+      <h1 className="login-title" id="login-story-title">PACD WorkPilot</h1>
+      <div aria-label="WorkPilot workflow: projects, work updates, claims and requests, and review" className="workflow-loop">
+        <div className="workflow-track">
+          <span className="workflow-progress" aria-hidden="true" />
+          {steps.map((step, index) => <div className="workflow-step-wrap" key={step.label}>
+            <article className="workflow-step">
+              <span className={`workflow-step-icon workflow-step-icon-${index + 1}`}>{step.icon}</span>
+              <span>{step.label}</span>
+            </article>
+          </div>)}
+        </div>
+      </div>
+    </div>
+  </section>;
 }
 
 function AuthLayout({ children }: { children: ReactNode }) {
   return <main className="login-page min-h-screen bg-[var(--navy-950)]">
     <div className="login-orbit login-orbit-one" aria-hidden="true"/><div className="login-orbit login-orbit-two" aria-hidden="true"/>
-    <section className="login-story" aria-labelledby="login-story-title"><img alt="PACD" className="login-brand" src="/logo_left.png"/><div className="login-story-copy"><p className="type-overline text-blue-100/65">PACD WorkPilot</p><h1 className="login-title" id="login-story-title">Work stays clear when everything is connected.</h1><p className="login-intro">Keep project updates, requests, and claims in one secure workspace.</p></div></section>
-    <section className="login-panel" aria-labelledby="sign-in-title"><div className="login-card">{children}</div><p className="type-caption mt-5 text-center text-blue-100/60">Authorized PACD personnel only</p></section>
+    <AuthStory/>
+    <section className="login-panel" aria-labelledby="sign-in-title"><div className="login-card">{children}</div><p className="login-authorization type-caption text-center">Authorized PACD personnel only</p></section>
   </main>;
 }

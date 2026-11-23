@@ -2,7 +2,7 @@ import type { Principal } from "@pacd/contracts";
 import { Button, IconButton } from "@pacd/ui";
 import {
   Activity,
-  BarChart3,
+  Bell,
   BriefcaseBusiness,
   ClipboardList,
   FolderKanban,
@@ -15,7 +15,7 @@ import {
   UsersRound,
   X,
 } from "lucide-react";
-import { useState, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 
 import { getNavigation } from "../lib/navigation";
 
@@ -28,7 +28,6 @@ const icons: Record<string, ReactNode> = {
   people: <UsersRound aria-hidden="true" size={18} />,
   profile: <UserRound aria-hidden="true" size={18} />,
   projects: <FolderKanban aria-hidden="true" size={18} />,
-  reports: <BarChart3 aria-hidden="true" size={18} />,
   requests: <ClipboardList aria-hidden="true" size={18} />,
   "users-access": <ShieldCheck aria-hidden="true" size={18} />,
   work: <BriefcaseBusiness aria-hidden="true" size={18} />,
@@ -48,9 +47,30 @@ export function AppShell({
   principal: Principal;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const notificationsRef = useRef<HTMLDivElement>(null);
   const navigation = getNavigation(principal);
 
-  function followNavigation(event: MouseEvent<HTMLAnchorElement>, pageId: string) {
+  useEffect(() => {
+    if (!notificationsOpen) return;
+
+    function closeOnOutsidePress(event: PointerEvent) {
+      if (event.target instanceof Node && !notificationsRef.current?.contains(event.target)) setNotificationsOpen(false);
+    }
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setNotificationsOpen(false);
+    }
+
+    document.addEventListener("pointerdown", closeOnOutsidePress);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePress);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [notificationsOpen]);
+
+  function followNavigation(event: ReactMouseEvent<HTMLAnchorElement>, pageId: string) {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     onNavigate(pageId);
@@ -59,17 +79,17 @@ export function AppShell({
 
   const sidebar = (
     <>
-      <div className="flex h-17 items-center border-b border-white/10 px-4 pr-14 lg:pr-4">
-        <img alt="PACD" className="brand-logo h-auto w-36 max-w-full" src="/logo_left.png" />
+      <div className="sidebar-brand-section flex h-17 items-center px-4 pr-14 lg:pr-4">
+        <img alt="PACD" className="brand-logo h-auto w-28 max-w-full" src="/logo_left.png" />
       </div>
       <nav aria-label="Main navigation" className="flex-1 overflow-y-auto px-3 py-4">
-        <p className="type-overline px-2 pb-2 text-blue-100/55">Workspace</p>
+        <p className="type-overline px-2 pb-2 text-white/55">Workspace</p>
         <ul className="space-y-1">
           {navigation.map((item) => (
             <li key={item.id}>
               <a
                 aria-current={activePage === item.id ? "page" : undefined}
-                className={`interactive-control type-body flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-left font-medium ${activePage === item.id ? "bg-white/13 text-white" : "text-blue-50/75 hover:bg-white/8 hover:text-white"}`}
+                className={`sidebar-nav-link interactive-control type-body flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-left font-medium ${activePage === item.id ? "sidebar-nav-link-active text-white" : "text-white/75 hover:text-white"}`}
                 href={item.path}
                 onClick={(event) => followNavigation(event, item.id)}
               >
@@ -80,26 +100,17 @@ export function AppShell({
           ))}
         </ul>
       </nav>
-      <div className="border-t border-white/10 p-3">
-        <div className="rounded-lg bg-white/7 p-3">
-          <div className="type-caption flex items-center gap-2 font-medium text-white">
-            <span className="size-2 rounded-full bg-emerald-400" />
-            Local API connected
-          </div>
-          <p className="type-caption mt-1.5 text-blue-100/60">Database-backed local session</p>
-        </div>
-      </div>
     </>
   );
 
   return (
     <div className="min-h-screen bg-[var(--canvas)] text-[var(--ink)]">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-56 flex-col bg-[var(--navy-950)] lg:flex">{sidebar}</aside>
+      <aside className="app-sidebar fixed inset-y-0 left-0 z-30 hidden w-56 flex-col lg:flex">{sidebar}</aside>
       {mobileOpen ? (
         <div className="fixed inset-0 z-40 lg:hidden">
-          <button aria-label="Close navigation" className="absolute inset-0 bg-slate-950/50" onClick={() => setMobileOpen(false)} type="button" />
-          <aside className="relative flex h-full w-72 flex-col bg-[var(--navy-950)] shadow-xl">
-            <IconButton className="absolute right-3 top-3 border-white/20 bg-transparent text-white hover:bg-white/10" label="Close navigation" onClick={() => setMobileOpen(false)}>
+          <button aria-label="Close navigation" className="absolute inset-0 bg-[var(--navy-950)]/50" onClick={() => setMobileOpen(false)} type="button" />
+          <aside className="app-sidebar relative flex h-full w-72 flex-col shadow-xl">
+            <IconButton className="absolute right-3 top-3 bg-white/80 shadow-sm" label="Close navigation" onClick={() => setMobileOpen(false)}>
               <X aria-hidden="true" size={19} />
             </IconButton>
             {sidebar}
@@ -108,15 +119,38 @@ export function AppShell({
       ) : null}
 
       <div className="lg:pl-56">
-        <header className="sticky top-0 z-20 flex h-17 items-center justify-between border-b border-[var(--border)] bg-white/95 px-4 backdrop-blur sm:px-5">
-          <div className="flex items-center gap-3">
+        <header className="app-topbar sticky top-0 z-20 flex h-17 items-center justify-between px-4 sm:px-5">
+          <div className="flex items-center gap-2 sm:gap-3">
             <IconButton className="lg:hidden" label="Open navigation" onClick={() => setMobileOpen(true)}>
               <Menu aria-hidden="true" size={19} />
             </IconButton>
-            <p className="type-section-title hidden text-[var(--navy-900)] sm:block">PACD WorkPilot</p>
+            <p className="topbar-title">WorkPilot</p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="relative" ref={notificationsRef}>
+              <IconButton
+                aria-controls="notification-panel"
+                aria-expanded={notificationsOpen}
+                aria-haspopup="dialog"
+                className="topbar-notification-button"
+                label="Notifications"
+                onClick={() => setNotificationsOpen((open) => !open)}
+              >
+                <Bell aria-hidden="true" size={18} />
+              </IconButton>
+              {notificationsOpen ? (
+                <section aria-label="Notifications" className="notification-panel" id="notification-panel" role="dialog">
+                  <div className="notification-panel-header">
+                    <h2 className="type-section-title text-[var(--navy-900)]">Notifications</h2>
+                  </div>
+                  <div className="notification-empty-state">
+                    <span className="notification-empty-icon"><Bell aria-hidden="true" size={20} /></span>
+                    <p className="type-body text-[var(--muted)]">No notifications</p>
+                  </div>
+                </section>
+              ) : null}
+            </div>
             <div className="type-label hidden size-9 place-items-center rounded-full bg-[var(--navy-100)] font-medium text-[var(--navy-900)] sm:grid">
               {principal.displayName.split(" ").map((part) => part[0]).join("").slice(0, 2)}
             </div>
