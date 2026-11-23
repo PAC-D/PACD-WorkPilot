@@ -12,6 +12,7 @@ test("normalizes root and nested deployment paths", () => {
 test("adds the deployment prefix without changing canonical application paths", () => {
   assert.equal(addBasePath("/dashboard", ""), "/dashboard");
   assert.equal(addBasePath("/dashboard", "/workpilot"), "/workpilot/dashboard");
+  assert.equal(addBasePath("/logo_left.png", "/workpilot"), "/workpilot/logo_left.png");
   assert.equal(addBasePath("/", "/workpilot"), "/workpilot/");
 });
 

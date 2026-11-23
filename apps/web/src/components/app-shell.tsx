@@ -17,7 +17,10 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 
+import { addBasePath, normalizeBasePath } from "../lib/base-path";
 import { getNavigation } from "../lib/navigation";
+
+const logoSource = addBasePath("/logo_left.png", normalizeBasePath(import.meta.env.BASE_URL));
 
 const icons: Record<string, ReactNode> = {
   audit: <ShieldCheck aria-hidden="true" size={18} />,
@@ -80,7 +83,7 @@ export function AppShell({
   const sidebar = (
     <>
       <div className="sidebar-brand-section flex h-17 items-center px-4 pr-14 lg:pr-4">
-        <img alt="PACD" className="brand-logo h-auto w-28 max-w-full" src="/logo_left.png" />
+        <img alt="PACD" className="brand-logo h-auto w-28 max-w-full" src={logoSource} />
       </div>
       <nav aria-label="Main navigation" className="flex-1 overflow-y-auto px-3 py-4">
         <p className="type-overline px-2 pb-2 text-white/55">Workspace</p>

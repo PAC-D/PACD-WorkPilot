@@ -2,6 +2,10 @@ import { completeNewPasswordInputSchema, signInInputSchema, type CompleteNewPass
 import { Activity, ArrowRight, CheckCircle2, Eye, EyeOff, FolderKanban, ReceiptText, RefreshCw } from "lucide-react";
 import { useState, type FormEvent, type ReactNode } from "react";
 
+import { addBasePath, normalizeBasePath } from "../../lib/base-path";
+
+const logoSource = addBasePath("/logo_left.png", normalizeBasePath(import.meta.env.BASE_URL));
+
 export interface LocalIdentity {
   displayName: string;
   employeeCode: string;
@@ -120,7 +124,7 @@ function AuthStory() {
   ];
 
   return <section className="login-story" aria-labelledby="login-story-title">
-    <div className="login-brand-frame"><img alt="PACD" className="login-brand" src="/logo_left.png" /></div>
+    <div className="login-brand-frame"><img alt="PACD" className="login-brand" src={logoSource} /></div>
     <div className="login-story-copy">
       <h1 className="login-title" id="login-story-title">PACD WorkPilot</h1>
       <div aria-label="WorkPilot workflow: projects, work updates, claims and requests, and review" className="workflow-loop">
