@@ -70,6 +70,8 @@ WORKPILOT_ENV_FILE=deploy/lightsail.env docker compose \
 
 The web container publishes only `127.0.0.1:8080`. The migration container must exit successfully before the API starts. Verify `http://127.0.0.1:8080/` from the host before changing Nginx.
 
+The production Dockerfiles install the exact `pnpm` version pinned by `packageManager`; do not replace this with `corepack enable`, because the selected Node 26 image does not bundle Corepack.
+
 ## 5. Add the existing Nginx path route
 
 Install the rate-limit zone and location snippet from `deploy/host-nginx/`. Add the location snippet only inside the existing `registration.pac-d.com` HTTPS server block, before its catch-all `location /` block.
