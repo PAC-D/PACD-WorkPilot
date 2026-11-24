@@ -10,6 +10,8 @@ import { PlatformService } from "./modules/platform-service.ts";
 import { FileService } from "./files/file-service.ts";
 import { S3ObjectStorage } from "./files/s3-storage.ts";
 import { CognitoProvisioningService } from "./auth/cognito-provisioning.ts";
+import { LocalObjectStorage } from "./files/local-storage.ts";
+import { PostgresEventStream } from "./events/postgres-event-stream.ts";
 
 const config = readRuntimeConfig();
 const pool = createDatabasePool(config.database);
@@ -21,11 +23,16 @@ const authenticate = config.localAuthEnabled
     : async () => null;
 
 const platform=new PlatformService(pool, new CursorCodec(config.cursorSecret));
+const events=new PostgresEventStream(pool);
+await events.start();
 const provisioning=config.awsRegion&&config.cognito?new CognitoProvisioningService(config.awsRegion,config.cognito.userPoolId,platform):null;
+const localFiles=config.localAuthEnabled?new LocalObjectStorage(`${process.cwd()}/.local-files`,config.cursorSecret,`http://127.0.0.1:${config.port}`):undefined;
 const app = createApi({
   authenticate,
   createUser: provisioning ? (actor,input,key,requestId)=>provisioning.createUser(actor,input,key,requestId) : undefined,
-  files: config.awsRegion && config.s3Bucket ? new FileService(pool,new S3ObjectStorage(config.awsRegion,config.s3Bucket)) : undefined,
+  files: config.awsRegion && config.s3Bucket ? new FileService(pool,new S3ObjectStorage(config.awsRegion,config.s3Bucket)) : localFiles?new FileService(pool,localFiles):undefined,
+  localFiles,
+  events,
   listLocalIdentities: config.localAuthEnabled ? () => listLocalIdentities(pool) : undefined,
   platform,
   webOrigin: config.webOrigin,
@@ -42,7 +49,7 @@ server.once("error", (error) => {
     message: error.message,
     port: config.port,
   }));
-  void pool.end().finally(() => {
+  void events.stop().then(()=>pool.end()).finally(() => {
     process.exitCode = 1;
   });
 });
@@ -50,6 +57,7 @@ server.once("error", (error) => {
 async function shutdown(signal: string) {
   console.log(JSON.stringify({ event: "api_stopping", signal }));
   server.close(async (error) => {
+    await events.stop();
     await pool.end();
     if (error) {
       console.error(JSON.stringify({ event: "api_stop_failed", message: error.message }));

@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-24 - Simpler tasks, scoped Admin visibility and private attachments
+- Added ADR-0007 and migration `0004_simplified_work.sql` for task tags and dates, directional Admin visibility, request attachments, project name search, and post-commit event hints.
+- Added employee-owned project creation, project and task editing, Super Admin tag/assignment controls, employee dashboard summaries, and pending claim/request sections.
+- Added private local PDF/image uploads and request attachments through the existing file service; hosted S3 finalization checks object signatures and emits an invalidation event.
+- Added an authenticated, per-event-authorized SSE stream for prompt connected-client updates with reconnect/focus reconciliation.
+- Verified migrations, scoped visibility, notification payloads, local API workflows, live stream isolation, and all static/unit/build gates against an isolated temporary PostgreSQL cluster.
+
 ## 2026-11-10 - Canonical routes and hosted authentication challenge contract
 - Replaced in-memory page selection with canonical History API routes for dashboard, work, people, projects, claims, requests, reports, administration, settings, audit and profile.
 - Added permission-aware direct-route resolution, browser Back/Forward support, accessible anchors, and explicit 403/404 states without adding a routing dependency.

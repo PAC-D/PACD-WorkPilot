@@ -1,5 +1,6 @@
 import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { detectMimeSignature } from "./file-signature.ts";
 
 export interface StoredObjectMetadata { contentLength: number; contentType: string }
 export interface UploadGrant { expiresAt: string; headers: Readonly<Record<string, string>>; url: string }
@@ -42,7 +43,11 @@ export class S3ObjectStorage implements ObjectStorage {
   async metadata(key: string): Promise<StoredObjectMetadata> {
     const result = await this.client.send(new HeadObjectCommand({ Bucket: this.bucket, Key: key }));
     if (result.ContentLength === undefined || !result.ContentType) throw new Error("Uploaded object metadata is incomplete");
-    return { contentLength: result.ContentLength, contentType: result.ContentType };
+    const preview=await this.client.send(new GetObjectCommand({Bucket:this.bucket,Key:key,Range:"bytes=0-15"}));
+    if(!preview.Body)throw new Error("Uploaded object signature is unavailable");
+    const detected=detectMimeSignature(await preview.Body.transformToByteArray());
+    if(!detected||detected!==result.ContentType)throw new Error("Uploaded object content type does not match its signature");
+    return { contentLength: result.ContentLength, contentType: detected };
   }
 
   async delete(key: string): Promise<void> { await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key })); }

@@ -7,7 +7,7 @@ An employee can submit a work update, expense receipt or request in under 60 sec
 
 ## Actors
 - USER: self-service; own work/claims/requests, assigned projects.
-- ADMIN: organization-wide read visibility in v1; create, assign, configure, review, approve and edit rights remain granular grants set by Super Admin.
+- ADMIN: reads employee and own records; another Admin's records require a directional Super Admin grant under ADR-0007. Create, assign, configure, review, approve and edit rights remain granular grants.
 - SUPER_ADMIN: administers accounts, permissions, departments, projects, request form templates, claim policy, and audit. Sensitive self-approvals still denied unless explicit super-admin policy plus audit requirements are met; v1 disallows them entirely to prevent conflict of interest.
 
 ## Module requirements
@@ -18,7 +18,7 @@ Super Admin adds employee code (unique), display name, username, optional email/
 Project code, name, owner, description, start date, planned end date, actual end date, status (PLANNED/ACTIVE/ON_HOLD/COMPLETED/ARCHIVED), member assignments, assignment date, assigned_by, optional due date per member. Each project may be visible to approved members/admin scopes. User may request to join; no automatic access to unassigned project. Track assignment and removal history.
 
 ### Work activities
-Project, title, category, notes, date, status (PLANNED/IN_PROGRESS/BLOCKED/COMPLETED), optional attachment, optional time spent. Updates to same activity are appended to activity history. Search/filter by date, project, employee, category, status. No productivity rankings or mandatory activity timer. Admin has organization-wide read visibility; write and review actions still require explicit grants.
+Project, title, tag, notes, dates, status (PLANNED/IN_PROGRESS/BLOCKED/COMPLETED), optional attachment, optional time spent. Updates to same activity are appended to activity history. Search/filter by date, project, employee, tag, status. No productivity rankings or mandatory activity timer. Admin reads follow ADR-0007's subject scope; write and review actions still require explicit grants.
 
 ### Monthly claims
 Use term **Claims** (not quotations). Types: MOBILE_BILL, INTERNET_BILL, TRAVEL_ALLOWANCE and configuration-defined types. Each has `periodMonth YYYY-MM`, amount minor units + currency BDT, supporting attachments, memo, created/submitted dates; states DRAFT/SUBMITTED/UNDER_REVIEW/NEEDS_INFO/APPROVED/REJECTED/PAID. Only server-approved transitions. Claim policy can define per-category caps, deadlines and one-active-claim-per-period for mobile/internet; travel may have multiple claims. Reject/needs-info requires reason. Edits after submission require claim return to NEEDS_INFO, resubmit, or explicit scoped override with audit. Reimbursement does not imply payment; mark PAID only when granted.
@@ -31,6 +31,8 @@ Employee: recent activities, active projects, current month claim state, request
 Admin: authorized employee/project activity, pending claims and requests, blocked work, upcoming/delayed projects. Interactive bar/line for updates grouped by day/week, donut/pie for project status or request mix, project timeline table with start/planned/actual end, assignment timestamp, member count. All charts use authorized aggregates only. Charts have table alternatives and clear empty states. Super Admin adds organization overview and configuration.
 
 ### Common UX
+ADR-0007 changes the work flow: employees can create and edit their own projects and tasks, select a Super Admin-managed tag, set start/planned/completion dates and update task status. PLANNED and IN_PROGRESS are labeled Upcoming and Ongoing in the UI. Super Admin assigns employees to projects. Admin dashboards show per-employee current tasks and pending claims/requests under the subject visibility policy below.
+
 Page-based navigation, clear action verbs, shared table/filter/search/date/month selectors, confirmation of destructive or approval actions, actionable notifications, accessible keyboard navigation, responsive layouts. No emoji, gratuitous headings/tags, em dashes, large animations or dense dashboards. UI palette specified in `UI_DESIGN_SYSTEM.md`.
 
 ## Core business invariants

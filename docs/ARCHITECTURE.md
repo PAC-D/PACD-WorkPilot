@@ -31,6 +31,8 @@ infra/                       hosted infrastructure after deployment approval
 - `events`: transactional outbox, publisher adapter and client invalidation.
 
 ## Write path (critical)
+ADR-0007 selects PostgreSQL post-commit `NOTIFY` and authenticated Hono SSE for live hints on the approved single-instance runtime. The outbox stays durable; connected-stream delivery is best effort and client reconciliation covers missed notifications. The server checks current grants and object visibility before each hint.
+
 1. The identity adapter authenticates the request; the API loads the authoritative principal and permission version from PostgreSQL.
 2. Validate schema, permission, resource scope and transition; check version and idempotency key.
 3. In one PostgreSQL transaction write the entity, audit record, idempotency result and outbox event.

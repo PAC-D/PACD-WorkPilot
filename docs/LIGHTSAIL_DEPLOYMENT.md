@@ -76,6 +76,8 @@ The production Dockerfiles install the exact `pnpm` version pinned by `packageMa
 
 Install the rate-limit zone and location snippet from `deploy/host-nginx/`. Add the location snippet only inside the existing `registration.pac-d.com` HTTPS server block, before its catch-all `location /` block.
 
+The snippet includes a dedicated `/workpilot/api/v1/events` SSE route with proxy buffering disabled. Keep it ahead of the general API location so connected authorized viewers receive invalidation hints promptly.
+
 Before reload:
 
 ```bash

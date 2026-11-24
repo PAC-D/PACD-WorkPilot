@@ -4,9 +4,8 @@
   "title":"EntityChangedV1",
   "type":"object",
   "additionalProperties":false,
-  "required":["eventId","type","entityId","scope","version","occurredAt"],
+  "required":["type","entityId","scope","version","occurredAt"],
   "properties":{
-    "eventId":{"type":"string","minLength":1},
     "type":{"enum":["CLAIM_CHANGED","REQUEST_CHANGED","ACTIVITY_CHANGED","PROJECT_CHANGED","USER_GRANTS_CHANGED","CONFIG_CHANGED"]},
     "entityId":{"type":"string","minLength":1},
     "scope":{"type":"string","minLength":1},

@@ -1,15 +1,18 @@
 import type { CompleteNewPasswordInput, Permission, Principal, SignInInput } from "@pacd/contracts";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { AppShell } from "./components/app-shell";
 import { authMode, hostedAuthClient } from "./features/auth/auth-client";
 import { HostedLoginPage, LoginPage } from "./features/auth/login-page";
 import { ApiError, apiClient } from "./lib/api-client";
+import { uiPreviewEnabled } from "./lib/ui-preview";
 import { addBasePath, normalizeBasePath, stripBasePath } from "./lib/base-path";
 import { getNavigationPath, resolveRoute } from "./lib/navigation";
 import { DatabaseDashboard } from "./pages/database-dashboard";
-import { ActivitiesPage, AuditPage, ClaimsPage, ConfigurationPage, ProfilePage, ProjectsPage, RequestsPage, UsersPage } from "./pages/resource-pages";
+import { AuditPage, ClaimsPage, ConfigurationPage, ProfilePage, RequestsPage, UsersPage } from "./pages/resource-pages";
+import { SimpleActivitiesPage, SimpleProjectsPage } from "./pages/work-pages";
+import { AdminVisibilityControls, TagControls } from "./pages/admin-controls";
 
 function allowed(principal:Principal,permission:Permission){return principal.permissions.includes(permission);}
 const deploymentBasePath = normalizeBasePath(import.meta.env.BASE_URL);
@@ -20,8 +23,30 @@ export function App() {
   const [loginError,setLoginError]=useState<string|null>(null);
   const [authPending,setAuthPending]=useState(false);
   const [needsNewPassword,setNeedsNewPassword]=useState(false);
+  const [liveConnected,setLiveConnected]=useState(false);
   const queryClient=useQueryClient();
   const principalQuery=useQuery({queryKey:["principal"],queryFn:apiClient.me,retry:false,refetchInterval:false});
+  const priorPrincipal=useRef<string|null>(null);
+  useEffect(()=>{
+    const current=principalQuery.data?`${principalQuery.data.id}:${principalQuery.data.policyVersion}`:null;
+    if(priorPrincipal.current&&current&&priorPrincipal.current!==current){
+      queryClient.removeQueries({predicate:query=>query.queryKey[0]!=="principal"});
+    }
+    priorPrincipal.current=current;
+  },[principalQuery.data,queryClient]);
+  useEffect(()=>{
+    if(!principalQuery.data||uiPreviewEnabled)return;
+    const controller=new AbortController();let reconnect:number|undefined;let connectedBefore=false;let retryDelay=2000;
+    const connect=async()=>{
+      try{await apiClient.streamEvents(event=>{
+        const keys=event.type==="ACTIVITY_CHANGED"?["activities","dashboard"]:event.type==="CLAIM_CHANGED"?["claims","dashboard"]:event.type==="REQUEST_CHANGED"?["requests","dashboard"]:event.type==="PROJECT_CHANGED"?["projects","dashboard"]:event.type==="CONFIG_CHANGED"?["config"]:["principal"];
+        for(const key of keys)void queryClient.invalidateQueries({queryKey:[key]});
+      },()=>{setLiveConnected(true);retryDelay=2000;if(connectedBefore)void queryClient.invalidateQueries({predicate:query=>query.isActive()});connectedBefore=true;},controller.signal);}catch{setLiveConnected(false);}
+      if(!controller.signal.aborted){setLiveConnected(false);reconnect=window.setTimeout(()=>void connect(),retryDelay);retryDelay=Math.min(retryDelay*2,30000);}
+    };
+    void connect();
+    return ()=>{controller.abort();if(reconnect!==undefined)window.clearTimeout(reconnect);};
+  },[principalQuery.data?.id,principalQuery.data?.policyVersion,queryClient]);
   const signedOut=principalQuery.error instanceof ApiError&&principalQuery.error.status===401;
   const identities=useQuery({queryKey:["local-identities"],queryFn:apiClient.listIdentities,enabled:authMode==="local"&&signedOut,retry:false});
 
@@ -62,7 +87,7 @@ export function App() {
   const activePage=resolution.kind==="allowed"?resolution.pageId:"";
   function navigateToPage(pageId:string){const path=getNavigationPath(pageId,principal);if(path)navigate(path);}
   return <AppShell activePage={activePage} onNavigate={navigateToPage} onSignOut={signOut} principal={principal}>
-    {resolution.kind==="allowed"?<Route activePage={resolution.pageId} principal={principal}/>:resolution.kind==="forbidden"?<RouteMessage code="403" description="You do not have permission to open this area." title="Access denied"/>:<RouteMessage code="404" description="The page does not exist or may have moved." title="Page not found"/>}
+    {resolution.kind==="allowed"?<Route activePage={resolution.pageId} principal={principal} liveConnected={liveConnected}/>:resolution.kind==="forbidden"?<RouteMessage code="403" description="You do not have permission to open this area." title="Access denied"/>:<RouteMessage code="404" description="The page does not exist or may have moved." title="Page not found"/>}
   </AppShell>;
 }
 
@@ -70,18 +95,18 @@ function RouteMessage({code,description,title}:{code:string;description:string;t
   return <section className="mx-auto max-w-2xl rounded-xl border border-[var(--border)] bg-white p-8 text-center"><p className="type-overline text-[var(--navy-500)]">{code}</p><h1 className="type-page-title mt-2 text-[var(--navy-900)]">{title}</h1><p className="type-body mt-3 text-[var(--muted)]">{description}</p><a className="mt-6 inline-flex min-h-10 items-center rounded-lg bg-[var(--navy-700)] px-4 type-label text-white hover:bg-[var(--navy-800)]" href={addBasePath("/dashboard", deploymentBasePath)}>Return to dashboard</a></section>;
 }
 
-function Route({activePage,principal}:{activePage:string;principal:Principal}){
+function Route({activePage,principal,liveConnected}:{activePage:string;principal:Principal;liveConnected:boolean}){
   switch(activePage){
-    case "overview": return <DatabaseDashboard principal={principal}/>;
+    case "overview": return <DatabaseDashboard principal={principal} liveConnected={liveConnected}/>;
     case "people": return <UsersPage canCreate={false}/>;
-    case "users-access": return <UsersPage canCreate={allowed(principal,"users.manage")}/>;
-    case "projects": return <ProjectsPage canCreate={allowed(principal,"projects.manage")}/>;
-    case "my-work": case "work": return <ActivitiesPage canCreate={allowed(principal,"work.create.own")}/>;
+    case "users-access": return <div className="space-y-5"><UsersPage canCreate={allowed(principal,"users.manage")}/><AdminVisibilityControls/></div>;
+    case "projects": return <SimpleProjectsPage principal={principal}/>;
+    case "my-work": case "work": return <SimpleActivitiesPage principal={principal}/>;
     case "claims": return <ClaimsPage canCreate={allowed(principal,"claims.create.own")} canReview={allowed(principal,"claims.approve.scope")} principal={principal}/>;
     case "requests": return <RequestsPage canCreate={allowed(principal,"requests.create.own")} canReview={allowed(principal,"requests.review.scope")} principal={principal}/>;
-    case "configuration": return <ConfigurationPage/>;
+    case "configuration": return <div className="space-y-5"><ConfigurationPage/><TagControls/></div>;
     case "audit": return <AuditPage/>;
     case "profile": return <ProfilePage principal={principal}/>;
-    default:return <DatabaseDashboard principal={principal}/>;
+    default:return <DatabaseDashboard principal={principal} liveConnected={liveConnected}/>;
   }
 }

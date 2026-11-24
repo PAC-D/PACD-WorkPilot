@@ -14,14 +14,16 @@
 - Passwords and private file bytes are never stored in PostgreSQL.
 
 ## Remaining work
+ADR-0007 adds project/task editing, Super Admin tags and directional Admin visibility, per-employee dashboard counts, request attachments, a private local file adapter and an authorized single-instance SSE invalidation stream. Local mutations invalidate active queries immediately. Connected clients receive scoped hints after commit; focus/reconnect/manual refresh handles missed hints. Durable replay for a multi-instance runtime remains future work.
+
 
 | Concern | Local state | Required before production |
 |---|---|---|
 | Authentication | Local selector plus hosted Cognito sign-in, `NEW_PASSWORD_REQUIRED`, bearer token and API verification | Recovery UI, revocation operations and final production session policy |
 | User provisioning | Local profile or hosted Cognito suppressed-delivery credential plus PostgreSQL grants | Disable/reset/revoke screens and secure manual handoff procedure validation |
 | Domain workflows | Create, list, assignment, submit and core approval paths | Detail/edit screens, remaining needs-info/reject/paid/fulfilled controls and complete transition matrix |
-| Files | Hosted private S3 claim upload/finalize/download adapter | Malware scanning/quarantine policy and remaining activity/request attachment surfaces |
-| Live invalidation | Transactional outbox rows | Local publisher plus approved hosted event transport and channel authorization |
+| Files | Private local adapter and hosted S3 claim/request upload/finalize/download | Malware scanning/quarantine policy and task attachment decision |
+| Live invalidation | Transactional outbox, PostgreSQL commit notification and authorized SSE stream | Durable replay strategy only if deployment moves beyond one API instance |
 | Filtering | Core bounded lists | All contracted date, status, employee and project filters bound into signed cursor identity |
 | Tests | Unit security and cursor tests | PostgreSQL integration, API E2E, browser E2E, concurrency, idempotency, event and outage suites |
 | Operations | Local migrations and checks | Hosted backup/restore, retention, monitoring, cost review and deployment ADR |
@@ -37,4 +39,4 @@
 
 ## Open product decisions
 
-Do not silently resolve the remaining decisions in `docs/OPEN_DECISIONS.md`, including hosted provider, retention, malware handling, session duration, duplicate-marker release behavior, project join-request workflow and hosted event authorization.
+Do not silently resolve the remaining decisions in `docs/OPEN_DECISIONS.md`, including retention, malware handling, session duration, duplicate-marker release behavior, project join-request workflow and multi-instance event delivery.

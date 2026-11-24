@@ -1,17 +1,20 @@
 # Data fetching, caching and event-driven updates
 
 ## Contract: NO timer polling
+- ADR-0007 implements the single-instance adapter with PostgreSQL `NOTIFY` after committed outbox inserts and an authenticated, per-event-authorized Hono SSE stream at `/api/v1/events`. Notifications carry only the contracted invalidation hint. The browser reconnects only after a dropped stream and reconciles active queries on reconnect; it does not refetch on a timer. The outbox remains for durable publication/replay work if the deployment later needs multiple API instances.
 - React Query `refetchInterval: false` globally and per-query. No `setInterval`, SWR refresh timers, `window.location.reload()` for data sync, or backend scheduled dashboard reads.
 - On initial view: query API once. On any successful local mutation: set returned entity in detail cache and invalidate exactly affected list/summary keys. On **remote committed mutation**: receive authorized event, invalidate affected query keys. Only mounted/active queries refetch automatically; inactive caches become stale and load when visited.
 - On reconnect/focus after interruption: reconcile relevant active queries **once**. This is event-driven recovery, not an interval. Debounce burst event invalidations 150–300ms; no cross-employee shared state cache.
 - Real-time transport is an authorized provider adapter. Local development may use an in-process adapter; AppSync Events is an AWS candidate only. Clients subscribe to scoped channels based on server-authorized grants, but client-provided channel names are never sufficient authorization. Never expose a public subscription to private records.
 
 ## Channel design
+ADR-0007's single-instance SSE route uses one authenticated connection per viewer and checks current grants plus object visibility before every hint. It does not expose named subscription channels. The channel paths below are a future broker design if deployment grows beyond one API instance.
+
 `/org/<orgId>/admins/claims`, `/org/<orgId>/admins/activities`, `/org/<orgId>/admins/requests`, `/org/<orgId>/projects/<projectId>`, `/org/<orgId>/users/<sub>`. Channel authorization must verify user identity plus current grants; on revocation disconnect/re-subscribe and reject old channel entitlement. If a hosted transport cannot enforce dynamic authorization directly, implement an authorized subscription broker or narrower identity-specific fanout and document an ADR **before launch**. Never rely on guessed channel paths.
 
 ## Event lifecycle
 1. Request validates and writes entity + audit + event marker transactionally.
-2. A durable publisher reads committed PostgreSQL outbox rows and publishes after commit; local development may use an in-process adapter.
+2. On the approved single-instance runtime, a PostgreSQL trigger sends a best-effort `NOTIFY` only after commit. The outbox row remains the durable record. A later multi-instance runtime needs an approved durable publisher/replay adapter.
 3. Publisher validates event marker, publishes non-sensitive event to authorized channels; retries are deduped and version checked.
 4. Viewer receives event; query-key map invalidates `claims.list`, `claims.detail:id`, `dashboard.summary` for matching claim event, etc.
 5. Active queries refetch from API and server rechecks access. No event payload used to update financial values.

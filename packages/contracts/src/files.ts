@@ -9,12 +9,15 @@ export const allowedUploadMimeSchema = z.enum([
   "image/png",
 ]);
 
-export const uploadIntentSchema = z.object({
-  claimId: z.string().min(1),
+const uploadBase = z.object({
   fileName: z.string().trim().min(1).max(255),
   mimeType: allowedUploadMimeSchema,
   sizeBytes: z.number().int().positive().max(MAX_UPLOAD_BYTES),
 });
+export const uploadIntentSchema = z.union([
+  uploadBase.extend({claimId:z.string().min(1),requestId:z.never().optional()}),
+  uploadBase.extend({requestId:z.string().min(1),claimId:z.never().optional()}),
+]);
 
 export type UploadIntent = z.infer<typeof uploadIntentSchema>;
 

@@ -5,6 +5,8 @@ ADR-0004 replaces the DynamoDB baseline with portable PostgreSQL 16 or newer. Th
 Versioned SQL migrations live in `apps/api/migrations/`. Applied migrations are immutable and checksum-verified. Never edit an applied migration; add the next numbered file.
 
 ## Core tables
+ADR-0007 adds `work_tags`, `admin_visibility`, and `request_files`. Activities gain `start_date`, `planned_end_date`, and `actual_end_date`; `activity_date` remains the bounded list sort date. Tags are referenced by activities. Admin visibility is directional and indexed by viewer and target. Request files use the same private metadata table as claim files.
+
 
 | Domain | Tables | Purpose |
 |---|---|---|
@@ -50,7 +52,7 @@ One transaction owns the entity mutation, audit record, idempotency result and o
 
 ## Local and hosted storage
 
-Local development stores only file metadata until the local file adapter is implemented. Hosted deployment will use private object storage. V1 accepts PDF, DOCX, JPG and PNG up to 5,000,000 bytes; extension, declared MIME, detected MIME and size must agree before finalization.
+Local development uses a private filesystem adapter behind short-lived signed API tickets. Hosted deployment uses private object storage. V1 accepts PDF, DOCX, JPG and PNG up to 5,000,000 bytes; declared MIME, detected MIME and size must agree before finalization.
 
 ## Database connections
 

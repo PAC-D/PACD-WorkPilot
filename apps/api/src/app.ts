@@ -6,7 +6,11 @@ import {
   createLocalAccountInputSchema,
   createHostedAccountInputSchema,
   createProjectInputSchema,
+  updateProjectInputSchema,
   createRequestInputSchema,
+  createWorkTagInputSchema,
+  updateActivityInputSchema,
+  adminVisibilityInputSchema,
   requestTransitionInputSchema,
   upsertDepartmentInputSchema,
   versionInputSchema,
@@ -23,10 +27,14 @@ import { requestId } from "hono/request-id";
 import { CursorError } from "./common/cursor.ts";
 import { DomainError, type PlatformService } from "./modules/platform-service.ts";
 import type { FileService } from "./files/file-service.ts";
+import type { LocalObjectStorage } from "./files/local-storage.ts";
+import type { PostgresEventStream } from "./events/postgres-event-stream.ts";
 
 export interface ApiDependencies {
   authenticate: (request: Request) => Promise<Principal | null>;
   files?: FileService;
+  localFiles?: LocalObjectStorage;
+  events?:PostgresEventStream;
   listLocalIdentities?: () => Promise<ReadonlyArray<{
     displayName: string;
     employeeCode: string;
@@ -85,12 +93,17 @@ export function createApi(dependencies: ApiDependencies) {
 
     app.get("/api/v1/config", async (context) => {
       const actor = await authenticate(context.req.raw); if (!actor) return unauthenticated(context);
-      return context.json({ data: { departments: await platform.listDepartments() } });
+      return context.json({ data: { departments: await platform.listDepartments(), workTags: await platform.listWorkTags() } });
     });
     app.put("/api/v1/config/departments/:id", async (context) => {
       const actor = await authenticate(context.req.raw); if (!actor) return unauthenticated(context);
       const parsed = upsertDepartmentInputSchema.safeParse(await context.req.json()); if (!parsed.success) return invalid(context, parsed.error.flatten());
       return context.json({ data: await platform.upsertDepartment(actor, context.req.param("id"), parsed.data, context.req.header("Idempotency-Key") ?? "", context.get("requestId")) });
+    });
+    app.post("/api/v1/config/work-tags",async(context)=>{
+      const actor=await authenticate(context.req.raw);if(!actor)return unauthenticated(context);
+      const parsed=createWorkTagInputSchema.safeParse(await context.req.json());if(!parsed.success)return invalid(context,parsed.error.flatten());
+      return context.json({data:await platform.createWorkTag(actor,parsed.data,context.req.header("Idempotency-Key")??"",context.get("requestId"))},201);
     });
     app.get("/api/v1/users", async (context) => {
       const actor = await authenticate(context.req.raw); if (!actor) return unauthenticated(context);
@@ -106,15 +119,19 @@ export function createApi(dependencies: ApiDependencies) {
       const parsed = createLocalAccountInputSchema.safeParse(body); if (!parsed.success) return invalid(context, parsed.error.flatten());
       return context.json({ data: await platform.createLocalAccount(actor, parsed.data, context.req.header("Idempotency-Key") ?? "", context.get("requestId")) }, 201);
     });
+    app.get("/api/v1/users/:id/visibility",async(context)=>{const actor=await authenticate(context.req.raw);if(!actor)return unauthenticated(context);return context.json({data:await platform.listAdminVisibility(actor,context.req.param("id"))});});
+    app.put("/api/v1/users/:id/visibility",async(context)=>{const actor=await authenticate(context.req.raw);if(!actor)return unauthenticated(context);const parsed=adminVisibilityInputSchema.safeParse(await context.req.json());if(!parsed.success)return invalid(context,parsed.error.flatten());return context.json({data:await platform.setAdminVisibility(actor,context.req.param("id"),parsed.data,context.req.header("Idempotency-Key")??"",context.get("requestId"))});});
     app.get("/api/v1/projects", async (context) => {
       const actor = await authenticate(context.req.raw); if (!actor) return unauthenticated(context);
-      return context.json(await platform.listProjects(actor, limit(context.req.query("limit")), context.req.query("cursor")));
+      const search=context.req.query("search")??"";if(search.length>120)return invalid(context,{search:"Search is too long"});
+      return context.json(await platform.listProjects(actor, limit(context.req.query("limit")), context.req.query("cursor"),search));
     });
     app.post("/api/v1/projects", async (context) => {
       const actor = await authenticate(context.req.raw); if (!actor) return unauthenticated(context);
       const parsed = createProjectInputSchema.safeParse(await context.req.json()); if (!parsed.success) return invalid(context, parsed.error.flatten());
       return context.json({ data: await platform.createProject(actor, parsed.data, context.req.header("Idempotency-Key") ?? "", context.get("requestId")) }, 201);
     });
+    app.patch("/api/v1/projects/:id",async(context)=>{const actor=await authenticate(context.req.raw);if(!actor)return unauthenticated(context);const parsed=updateProjectInputSchema.safeParse(await context.req.json());if(!parsed.success)return invalid(context,parsed.error.flatten());return context.json({data:await platform.updateProject(actor,context.req.param("id"),parsed.data,context.req.header("Idempotency-Key")??"",context.get("requestId"))});});
     app.post("/api/v1/projects/:id/members", async (context) => {
       const actor=await authenticate(context.req.raw);if(!actor)return unauthenticated(context);const parsed=assignProjectMemberInputSchema.safeParse(await context.req.json());if(!parsed.success)return invalid(context,parsed.error.flatten());return context.json({data:await platform.assignProjectMember(actor,context.req.param("id"),parsed.data,context.req.header("Idempotency-Key")??"",context.get("requestId"))},201);
     });
@@ -127,6 +144,7 @@ export function createApi(dependencies: ApiDependencies) {
       const parsed = createActivityInputSchema.safeParse(await context.req.json()); if (!parsed.success) return invalid(context, parsed.error.flatten());
       return context.json({ data: await platform.createActivity(actor, parsed.data, context.req.header("Idempotency-Key") ?? "", context.get("requestId")) }, 201);
     });
+    app.patch("/api/v1/activities/:id",async(context)=>{const actor=await authenticate(context.req.raw);if(!actor)return unauthenticated(context);const parsed=updateActivityInputSchema.safeParse(await context.req.json());if(!parsed.success)return invalid(context,parsed.error.flatten());return context.json({data:await platform.updateActivity(actor,context.req.param("id"),parsed.data,context.req.header("Idempotency-Key")??"",context.get("requestId"))});});
     app.get("/api/v1/claims", async (context) => {
       const actor = await authenticate(context.req.raw); if (!actor) return unauthenticated(context);
       return context.json(await platform.listClaims(actor, limit(context.req.query("limit")), context.req.query("cursor")));
@@ -164,6 +182,37 @@ export function createApi(dependencies: ApiDependencies) {
     app.post("/api/v1/files/presign-upload",async(context)=>{const actor=await dependencies.authenticate(context.req.raw);if(!actor)return unauthenticated(context);const parsed=uploadIntentSchema.safeParse(await context.req.json());if(!parsed.success)return context.json({error:{code:"VALIDATION_ERROR",message:"Check the submitted fields",requestId:context.get("requestId"),details:parsed.error.flatten()}},400);return context.json({data:await files.authorizeUpload(actor,parsed.data,context.req.header("Idempotency-Key")??"",context.get("requestId"))},201);});
     app.post("/api/v1/files/:id/finalize",async(context)=>{const actor=await dependencies.authenticate(context.req.raw);if(!actor)return unauthenticated(context);return context.json({data:await files.finalize(actor,context.req.param("id"),context.req.header("Idempotency-Key")??"",context.get("requestId"))});});
     app.get("/api/v1/files/:id/download",async(context)=>{const actor=await dependencies.authenticate(context.req.raw);if(!actor)return unauthenticated(context);return context.json({data:await files.authorizeDownload(actor,context.req.param("id"))});});
+  }
+
+  if(dependencies.events){
+    const events=dependencies.events;
+    app.get("/api/v1/events",async(context)=>{
+      const actor=await dependencies.authenticate(context.req.raw);if(!actor)return unauthenticated(context);
+      if(!events.isConnected())return context.json({error:{code:"SERVICE_UNAVAILABLE",message:"Live updates unavailable",requestId:context.get("requestId")}},503);
+      let unsubscribe=()=>{};
+      const encoder=new TextEncoder();
+      const stream=new ReadableStream<Uint8Array>({
+        start(controller){
+          controller.enqueue(encoder.encode(": connected\n\n"));
+          unsubscribe=events.subscribe(actor.id,event=>controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`)),()=>{try{controller.close();}catch{ /* already closed */ }});
+          context.req.raw.signal.addEventListener("abort",()=>{unsubscribe();try{controller.close();}catch{ /* already closed */ }},{once:true});
+        },
+        cancel(){unsubscribe();},
+      });
+      return new Response(stream,{headers:{"Content-Type":"text/event-stream","Cache-Control":"no-store","X-Accel-Buffering":"no"}});
+    });
+  }
+
+  if(dependencies.localFiles){
+    const local=dependencies.localFiles;
+    app.put("/api/v1/local-files/:ticket",async(context)=>{
+      try{await local.put(context.req.param("ticket"),context.req.raw.body,context.req.header("Content-Type")??"");return context.body(null,204);}
+      catch{return context.json({error:{code:"VALIDATION_ERROR",message:"Invalid or expired file upload",requestId:context.get("requestId")}},400);}
+    });
+    app.get("/api/v1/local-files/:ticket",async(context)=>{
+      try{const file=await local.get(context.req.param("ticket"));return new Response(Buffer.from(file.bytes),{headers:{"Content-Type":file.mimeType,"Cache-Control":"private, no-store","Content-Disposition":"attachment"}});}
+      catch{return context.json({error:{code:"NOT_FOUND",message:"File unavailable",requestId:context.get("requestId")}},404);}
+    });
   }
 
   app.notFound((context) =>

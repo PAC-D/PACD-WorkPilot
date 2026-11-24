@@ -54,7 +54,7 @@ Canonical internal paths are `/dashboard`, `/work`, `/people`, `/projects`, `/cl
 - Pie/donut chart: project status or request type composition, accessible legend + amounts.
 - Project timeline table: project, assigned date/start date, planned end, actual end, owner, assigned members, status. Show missing date as `Not set`, never fake dates.
 - Recent activity and approvals queue. Charts and table share date/project filters and authorized scope.
-- On screen updates via AppSync event invalidation, no timed fetching. Explicit connection state icon + refresh button.
+- On screen updates via the authorized SSE invalidation stream in ADR-0007, no timed fetching. Explicit connection state text + refresh button.
 
 ## Workflow and language
 Prefer action labels: `Update work`, `Submit claim`, `Request software`, `Approve`, `Return for changes`. Use short instructional copy; optional advanced fields collapsed. Never rely on tooltips for essential instructions. Status displayed as text and color. File upload progress and clear error. Explain rejected claims in plain language. No confirmation dialog for harmless navigation; confirm approval/rejection/role changes.

@@ -30,4 +30,4 @@
 `lint`, `typecheck`, unit/integration/E2E, dependency audit, contract compatibility check, infrastructure synth/security review, accessibility audit, backup restore test, deployment smoke test. Record test evidence; never declare production ready based on unit tests alone.
 
 ## Performance budget (targets not promises)
-Desktop frontend core route <=3s under target office network; ordinary warmed API p50 <=500ms; 95th percentile dashboard refresh <=5s when websocket healthy; all list endpoints capped limit 100; no periodic polling request in idle trace. Measure in staging with 30 modeled accounts.
+Desktop frontend core route <=3s under target office network; ordinary warmed API p50 <=500ms; 95th percentile dashboard refresh <=5s when the authorized SSE stream is healthy; all list endpoints capped limit 100; no periodic polling request in idle trace. Measure in staging with 30 modeled accounts.

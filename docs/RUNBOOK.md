@@ -7,7 +7,7 @@ In a hosted environment, Super Admin uses user management to create an account w
 If unauthorized approval suspected: disable account/revoke sessions; preserve audit; inspect claims approval state and transaction records; do not erase history; correct via explicit reversal workflow (future contract) or documented manual financial reconciliation; rotate affected access.
 
 ## Live events disconnected
-Show browser connection indicator and manual Refresh. Verify the selected event adapter's channel authorization, outbox publisher errors and permissions. Core CRUD should still work. After reconnect reload active queries once.
+Show browser connection indicator and manual Refresh. Check the PostgreSQL LISTEN connection, `/api/v1/events` response, Nginx proxy buffering, account grants and outbox notifications. Core CRUD should still work. After reconnect reload active queries once.
 
 ## Data recovery
 Confirm stage, incident scope and point in time; restore PostgreSQL backup/PITR into a **new** database, run integrity checks, and perform controlled cutover through configuration. Restore private files through the selected storage backup/versioning policy and test document references. Never blindly overwrite production.

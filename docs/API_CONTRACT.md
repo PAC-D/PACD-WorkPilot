@@ -7,6 +7,12 @@ Hosted sign-in and `NEW_PASSWORD_REQUIRED` completion are identity-provider oper
 Hosted `POST /users` accepts profile fields plus `temporaryPassword`, provisions Cognito first with message delivery suppressed, stores Cognito `sub` as `account_sub`, applies explicit default grants transactionally, and never stores or returns the password. Email is optional. Local mode creates only a fictional profile. `POST /files/presign-upload` requires `{claimId,fileName,mimeType,sizeBytes}` for an actor-owned editable claim and returns a five-minute object-specific PUT URL. Finalization verifies S3 metadata before marking the file usable. Download URLs are five-minute, object-specific and authorized on every request.
 
 ## Standard response conventions
+ADR-0007 adds `PATCH /projects/:id`, `PATCH /activities/:id`, `POST /config/work-tags`, and `GET/PUT /users/:id/visibility`. The project and activity patches require a version and return the updated record. `/config` includes `workTags`. `POST /files/presign-upload` accepts exactly one of `claimId` or `requestId`; list rows for claims and requests include finalized file metadata. Local development may expose signed `/local-files/:ticket` PUT/GET routes; those routes are absent in production. Project creation accepts optional code and owner; the server creates a code and uses the current actor as owner when omitted.
+
+`GET /events` is an authenticated SSE invalidation stream for the approved single-instance runtime. It sends only `{type,entityId,scope,version,occurredAt}` after a committed outbox insert. The server rechecks active account status, grants and object visibility for each notification. A stream can miss notifications during disconnection; clients reconcile on reconnect/focus.
+
+`GET /projects?search=<prefix>` filters project names case-insensitively, uses the same signed keyset pagination and binds the search term into cursor identity.
+
 - Successful list: `{data:[...], page:{limit:20,nextCursor:"opaque-or-null",hasMore:true}}`; `nextCursor` encodes a keyset sort tuple, query identity, expiry and signature. Never accept raw SQL or an unsigned cursor from the client. No `totalPages` or offset pagination.
 - Single record: `{data:{...}}`.
 - Error: `{error:{code:"FORBIDDEN",message:"Access denied",requestId:"...",details?:{}}}`. Do not leak existence of inaccessible resources.
@@ -54,10 +60,10 @@ Hosted `POST /users` accepts profile fields plus `temporaryPassword`, provisions
 When the development identity adapter is explicitly enabled, `POST /users` creates only a fictional local profile and default grants. It never accepts, generates, returns or stores a password. The profile becomes selectable from `/development/identities`. Hosted behavior provisions through Cognito while preserving the persisted application profile contract. The one-time password is transport-only input and is excluded from the returned profile, idempotency body/hash, audit state, and events.
 
 ## Real-time contract
-Not a business API: the selected authorized event adapter publishes `EntityChanged` `{eventId,type,entityId,scope,version,occurredAt}`; no records or secrets. Local development may use an in-process adapter; AppSync Events is only an AWS candidate. See `REALTIME_CACHE.md` and `contracts/event.schema.json`.
+The selected single-instance adapter publishes `EntityChanged` `{type,entityId,scope,version,occurredAt}` through the authenticated `/events` SSE route. No records or secrets are sent. See `REALTIME_CACHE.md` and `contracts/event.schema.json`.
 
 ## Access examples
 `POST /claims/:id/review` requires `claims.approve.scope`, correct scope, different claim owner, allowed status transition; checks after authenticated identity resolution. `PUT /users/:id/grants` only for Super Admin, never ordinary Admin.
 
 ## Response status
-201 created, 200 success, 204 success/no content, 400 validation, 401 unauthenticated, 403 forbidden, 404 absent/inaccessible, 409 version/idempotency conflict, 413 upload too large, 429 throttled, 500 sanitized internal failure.
+201 created, 200 success, 204 success/no content, 400 validation, 401 unauthenticated, 403 forbidden, 404 absent/inaccessible, 409 version/idempotency conflict, 413 upload too large, 429 throttled, 500 sanitized internal failure, 503 live stream unavailable.

@@ -14,12 +14,14 @@ Role templates provide defaults, but Super Admin grants and revokes per-user ove
 
 ## Role defaults
 - USER: personal work/projects/claims/requests.
-- ADMIN: `dashboard.read.scope`, `users.read.scope`, `work.read.scope`, `claims.read.scope`, `requests.read.scope` with organization-wide read scope in v1. Create/assign/configure/review/edit/approve/export rights are **not automatic**.
+- ADMIN: `dashboard.read.scope`, `users.read.scope`, `work.read.scope`, `claims.read.scope`, `requests.read.scope` for employees and own records. Another Admin requires a directional Super Admin grant. Create/assign/configure/review/edit/approve/export rights are **not automatic**.
 - SUPER_ADMIN: organization-wide management capabilities, except v1 prohibition on self-approval. Role changes only Super Admin, and bootstrap is out-of-band.
 
 Request assignment and acceptance are Super Admin capabilities by default. An Admin requires an explicit Super Admin-managed grant and still passes object, transition and audit policies.
 
 ## Self-modification and self-approval
+ADR-0007 narrows Admin read visibility: an Admin can read USER accounts and their own records. Reading another Admin's work, projects, claims, requests or attachments requires a directional subject grant from Super Admin. The grant is audited and increments the viewer's permission version. It does not grant review, approval or editing rights. Existing Admin accounts gain own work/claim/request grants; self-approval remains denied.
+
 - An Admin may correct own DRAFT claim with `claims.edit.own`.
 - Admin may edit others' submitted claims **only** with `claims.edit.scope`, correct scope, mandatory reason/audit, and policy-allowed state; no silent amount changes after approval.
 - No role may approve their own claim. `claims.approve.scope` applies to **others only**. An administrator may not create a second account to evade policy; actor and beneficiary relationship must be reviewed operationally.

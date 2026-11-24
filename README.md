@@ -25,7 +25,7 @@ A small internal application for **at most 10 active employee accounts**. It sup
 | Database | Portable PostgreSQL 16+; Docker Compose locally and an isolated WorkPilot volume on Lightsail |
 | Login | Development-only database-backed identity selector locally; Cognito adapter in hosted mode |
 | File storage | Private S3 presigned upload/download adapter in hosted mode |
-| Live invalidation | Provider adapter: event hint only, then targeted TanStack Query invalidation |
+| Live invalidation | Authorized SSE over PostgreSQL commit notifications; targeted TanStack Query invalidation |
 | Event publication | PostgreSQL transactional outbox -> hosted publisher adapter |
 | Hosting | Amazon Lightsail Linux instance; Docker Compose; Nginx + Hono + PostgreSQL (ADR-0006) |
 | IaC | Added only after hosting approval |
@@ -35,8 +35,10 @@ A small internal application for **at most 10 active employee accounts**. It sup
 **Deployment constraint:** local development incurs no cloud cost. ADR-0006 approves the shared Mumbai Lightsail topology, the existing `registration.pac-d.com` TLS endpoint, `/workpilot/` path routing and manual credential handoff. Backup retention and restore evidence still require operational confirmation before launch.
 
 ## User journeys
+- **User** can create a project for their own tasks, choose a Super Admin-managed tag, and edit task status, notes, and dates. Claims and requests accept private attachments.
+- **Admin** sees employee summaries and pending claims/requests; another Admin's records require an explicit directional Super Admin grant (ADR-0007).
 - **User** selects assigned projects, logs or revises activity, uploads expenses by billing month, submits requests, and tracks status.
-- **Admin** has organization-wide read visibility; reviews or manages only when explicitly granted; can see project assigned/end dates and reporting charts.
+- **Admin** has read visibility for employees and own records; another Admin's records require an explicit Super Admin grant. Reviews or management require separate grants.
 - **Super Admin** invites/disables identities, assigns roles/scopes and approval policy, manages projects/categories/request types, and audits changes. Super Admin is not exempt from financial self-approval restrictions.
 
 ## Key acceptance rules
@@ -66,7 +68,7 @@ Open `http://127.0.0.1:5173`. The API listens at `http://127.0.0.1:3000`. `pnpm 
 
 Use `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:integration`, and `pnpm build` before submitting changes. Never commit `.env`; `.env.example` contains placeholders only.
 
-The local frontend is connected to the Hono API and PostgreSQL for identity profiles, dashboard aggregates, users, departments, projects, assignments, work activities, claims, requests and audit records. Hosted mode uses Cognito with suppressed delivery and a Super Admin-supplied one-time password, API JWT verification and private S3 claim attachments. All business writes use the API; the browser never connects to PostgreSQL and never receives AWS credentials. Recovery, hosted event delivery and advanced workflow screens remain follow-up work. See [frontend to backend handoff](docs/FRONTEND_BACKEND_HANDOFF.md) and the [Lightsail runbook](docs/LIGHTSAIL_DEPLOYMENT.md).
+The local frontend is connected to the Hono API and PostgreSQL for identity profiles, dashboard aggregates, users, departments, projects, assignments, work activities, claims, requests and audit records. Hosted mode uses Cognito with suppressed delivery and a Super Admin-supplied one-time password, API JWT verification and private S3 attachments. All business writes use the API; the browser never connects to PostgreSQL and never receives AWS credentials. The approved single-instance runtime now provides authorized live invalidation through PostgreSQL notifications and SSE; recovery and remaining advanced workflow screens remain follow-up work. See [frontend to backend handoff](docs/FRONTEND_BACKEND_HANDOFF.md) and the [Lightsail runbook](docs/LIGHTSAIL_DEPLOYMENT.md).
 
 Authenticated browser navigation uses canonical internal SPA routes: `/dashboard`, `/work`, `/people`, `/projects`, `/claims`, `/requests`, `/admin`, `/settings`, `/admin/audit` and `/profile`. The production browser prefix is `/workpilot`, for example `/workpilot/dashboard`. Navigation visibility follows the effective principal, and direct inaccessible paths show an access-denied or not-found state. Hosted static delivery must rewrite unknown WorkPilot document requests to `index.html` so refreshing a deep link continues to work.
 

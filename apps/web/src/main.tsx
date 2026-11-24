@@ -16,6 +16,15 @@ const queryClient = new QueryClient({
   },
 });
 
+let lastReconcile=0;
+function reconcileActiveQueries(){
+  if(Date.now()-lastReconcile<500)return;
+  lastReconcile=Date.now();
+  void queryClient.invalidateQueries({predicate:query=>query.isActive()});
+}
+window.addEventListener("online",reconcileActiveQueries);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")reconcileActiveQueries();});
+
 const root = document.getElementById("root");
 
 if (!root) {

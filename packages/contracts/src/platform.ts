@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { activityStatusSchema, claimStatusSchema, projectStatusSchema, requestStatusSchema, roleSchema } from "./dashboard.ts";
 import { pageSchema } from "./common.ts";
+import { fileRecordSchema } from "./files.ts";
 
 export const accountSchema = z.object({
   createdAt: z.string().datetime(), departmentId: z.string().nullable(), departmentName: z.string().nullable(),
@@ -31,36 +32,50 @@ export type CreateHostedAccountInput = z.infer<typeof createHostedAccountInputSc
 
 export const projectSchema = z.object({
   actualEndDate: z.string().nullable(), code: z.string(), description: z.string(), id: z.string(),
-  memberCount: z.number().int().nonnegative(), name: z.string(), ownerName: z.string(), ownerSub: z.string(),
+  memberCount: z.number().int().nonnegative(), name: z.string(), ownerName: z.string(), ownerSub: z.string(), canCreateTask:z.boolean(),
   plannedEndDate: z.string().nullable(), startDate: z.string(), status: projectStatusSchema, version: z.number().int().positive(),
 });
 export type Project = z.infer<typeof projectSchema>;
 export const createProjectInputSchema = z.object({
-  code: z.string().trim().min(2).max(30), description: z.string().trim().max(2000).default(""),
-  name: z.string().trim().min(2).max(160), ownerSub: z.string().min(1),
+  code: z.string().trim().min(2).max(30).optional(), description: z.string().trim().max(2000).default(""),
+  name: z.string().trim().min(2).max(160), ownerSub: z.string().min(1).optional(),
   plannedEndDate: z.string().date().nullable().optional(), startDate: z.string().date(), status: projectStatusSchema,
 });
 export type CreateProjectInput = z.infer<typeof createProjectInputSchema>;
 export const assignProjectMemberInputSchema = z.object({ accountSub:z.string().min(1), dueDate:z.string().date().nullable().optional() });
 export type AssignProjectMemberInput = z.infer<typeof assignProjectMemberInputSchema>;
+export const updateProjectInputSchema = createProjectInputSchema.omit({ code:true, ownerSub:true }).extend({
+  actualEndDate: z.string().date().nullable(), version: z.number().int().positive(),
+});
+export type UpdateProjectInput = z.infer<typeof updateProjectInputSchema>;
+export const workTagSchema = z.object({ id:z.string(), name:z.string() });
+export type WorkTag = z.infer<typeof workTagSchema>;
+export const createWorkTagInputSchema = z.object({ name:z.string().trim().min(2).max(80) });
+export type CreateWorkTagInput = z.infer<typeof createWorkTagInputSchema>;
+export const adminVisibilityInputSchema = z.object({ targetSub:z.string().min(1), enabled:z.boolean() });
+export type AdminVisibilityInput = z.infer<typeof adminVisibilityInputSchema>;
 
 export const activitySchema = z.object({
   activityDate: z.string(), categoryId: z.string(), id: z.string(), ownerName: z.string(),
   projectId: z.string(), projectName: z.string(), status: activityStatusSchema,
   timeSpentMinutes: z.number().int().nonnegative().nullable(), title: z.string(), userSub: z.string(), version: z.number().int().positive(),
+  startDate:z.string().date(), plannedEndDate:z.string().date().nullable(), actualEndDate:z.string().date().nullable(), notes:z.string(),
 });
 export type Activity = z.infer<typeof activitySchema>;
 export const createActivityInputSchema = z.object({
   activityDate: z.string().date(), categoryId: z.string().trim().min(1).max(80), notes: z.string().trim().min(1).max(5000),
   projectId: z.string().min(1), status: activityStatusSchema, timeSpentMinutes: z.number().int().nonnegative().nullable().optional(),
-  title: z.string().trim().min(2).max(200),
+  title: z.string().trim().min(2).max(200), startDate:z.string().date(), plannedEndDate:z.string().date().nullable(),
+  actualEndDate:z.string().date().nullable(),
 });
 export type CreateActivityInput = z.infer<typeof createActivityInputSchema>;
+export const updateActivityInputSchema = createActivityInputSchema.omit({projectId:true}).extend({version:z.number().int().positive()});
+export type UpdateActivityInput = z.infer<typeof updateActivityInputSchema>;
 
 export const claimSchema = z.object({
   amountMinor: z.number().int().nonnegative(), claimType: z.string(), createdAt: z.string().datetime(), currency: z.literal("BDT"),
   id: z.string(), memo: z.string(), ownerName: z.string(), periodMonth: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
-  status: claimStatusSchema, userSub: z.string(), version: z.number().int().positive(),
+  status: claimStatusSchema, userSub: z.string(), version: z.number().int().positive(), files:z.array(fileRecordSchema),
 });
 export type Claim = z.infer<typeof claimSchema>;
 export const createClaimInputSchema = z.object({
@@ -79,7 +94,7 @@ export type ClaimTransitionInput = z.infer<typeof claimTransitionInputSchema>;
 const requestTypeSchema = z.enum(["SOFTWARE_INSTALL", "LEAVE", "API_ACCESS", "PURCHASE", "IT_SUPPORT", "GENERAL"]);
 export const requestSchema = z.object({
   createdAt: z.string().datetime(), id: z.string(), ownerName: z.string(), reason: z.string(), requestType: requestTypeSchema,
-  requesterSub: z.string(), status: requestStatusSchema, title: z.string(), version: z.number().int().positive(),
+  requesterSub: z.string(), status: requestStatusSchema, title: z.string(), version: z.number().int().positive(), files:z.array(fileRecordSchema),
 });
 export type WorkRequest = z.infer<typeof requestSchema>;
 export const createRequestInputSchema = z.object({
@@ -105,6 +120,7 @@ export const dashboardSummarySchema = z.object({
   activeProjects: z.number().int().nonnegative(), blockedWork: z.number().int().nonnegative(), pendingClaims: z.number().int().nonnegative(),
   pendingRequests: z.number().int().nonnegative(), projectMix: z.array(z.object({ count: z.number().int().nonnegative(), name: z.string() })),
   workTrend: z.array(z.object({ completed: z.number().int().nonnegative(), day: z.string(), updates: z.number().int().nonnegative() })),
+  employees:z.array(z.object({id:z.string(),name:z.string(),currentTask:z.string().nullable(),currentTasks:z.number().int().nonnegative(),pendingClaims:z.number().int().nonnegative(),pendingRequests:z.number().int().nonnegative()})),
 });
 export type DashboardSummary = z.infer<typeof dashboardSummarySchema>;
 
